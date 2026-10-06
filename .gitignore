@@ -221,3 +221,8 @@ __marimo__/
 
 # secrets
 .env
+
+# corpus cache and extracted text (manifest.jsonl is committed)
+data/raw/
+data/processed/
+.DS_Store
