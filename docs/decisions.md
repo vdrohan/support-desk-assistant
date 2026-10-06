@@ -49,3 +49,25 @@ Short architecture decision records. Newest decisions go at the bottom. If a dec
 - **Rejected:**
   - *Binding to 0.0.0.0 and relying on the firewall:* Docker goes around it.
   - *Kubernetes or k3s:* too heavy for one node.
+
+## 7. Corpus: Government of Canada citizen-services pages
+
+- **Decision:** English canada.ca pages for 5 mixed citizen-service programs: Employment Insurance, Canada Pension Plan, Old Age Security, Social Insurance Number and passports. About 30 pages each (depth 2 within each program's URL prefix). Seeds and limits are in `config.py`. `data/manifest.jsonl` is committed and defines the corpus for reproduction; the raw and processed text are gitignored and rebuilt by the crawler.
+- **Reason:** Real support-desk material: eligibility rules, how-to-apply steps, payment amounts and timelines. Programs overlap in vocabulary (EI and CPP, CPP and OAS), which makes retrieval non-trivial and gives triage realistic categories. It's public, stable, consistently structured (`<main>`, `dcterms.modified`), and canada.ca's terms allow non-commercial reproduction with attribution. Every processed file and future answer carries the page title and URL.
+- **Rejected:**
+  - *Synthetic or LLM-generated docs:* no ground truth, so evals would measure the generator, not retrieval.
+  - *Vendor help centres (SaaS docs):* terms often forbid scraping or reuse.
+  - *A single program:* too little category spread for triage.
+
+## 8. Crawler parsing: protego for robots.txt, BeautifulSoup + markdownify for content
+
+- **Decision:** Parse robots.txt with `protego`. Select `<main>` and strip boilerplate with BeautifulSoup (lxml), then convert to Markdown with `markdownify`. Link targets are dropped and only their text is kept.
+- **Reason:**
+  - canada.ca's robots.txt uses `*` wildcards (e.g. `/en/*/search.html`). `urllib.robotparser` only does literal prefix matching, so it silently ignores those rules. protego implements the full Google/RFC 9309 matching.
+  - We know exactly where the content is (`<main>`), so explicit selectors are predictable and testable. markdownify keeps tables and lists.
+  - Dropping link URLs saves tokens per chunk; the page URL is recorded once per document.
+- **Rejected:**
+  - *urllib.robotparser:* wrong on wildcard rules.
+  - *A hand-written wildcard check on top of it:* parsing code we'd have to own.
+  - *trafilatura:* heuristic content detection can drop tables and alert boxes.
+  - *html2text:* GPL-3.0 in an MIT repo.
