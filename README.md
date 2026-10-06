@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: early scaffolding.** The repo has project tooling, a Qdrant container definition and an empty package layout. There's no application code yet. See [Roadmap](#roadmap).
+> **Status: Phase 1 in progress.** The corpus crawler works. Chunking, embeddings, retrieval and the API don't exist yet. See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -50,24 +50,32 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
-| 1 | RAG core: ingest pipeline, `/ask` endpoint with citations, small eval set in `data/eval/`, `sda-ingest` and `sda-evals` commands | ⏳ next |
+| 1 | RAG core: corpus crawler ✅, then chunking + embeddings, `/ask` endpoint with citations, small eval set in `data/eval/`, `sda-ingest` and `sda-evals` commands | 🚧 in progress |
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
 Eval results will be published here once Phase 1 has a baseline. None exist yet.
 
+## Corpus
+
+English Government of Canada pages from canada.ca for 5 citizen-service programs: Employment Insurance, Canada Pension Plan, Old Age Security, Social Insurance Number and passports. That's up to 30 pages per program, crawled within each program's URL prefix. Source: Government of Canada, canada.ca, reproduced for non-commercial use with attribution. Each page's title and URL are kept in the manifest and in every processed file. Why this corpus: [decisions #7](docs/decisions.md#7-corpus-government-of-canada-citizen-services-pages).
+
 ## Repository layout
 
 ```
 src/support_desk_assistant/
-  config.py      # single source of config values (filled in Phase 1)
+  config.py      # single source of config values (pydantic-settings)
   api/           # FastAPI app
-  ingest/        # chunk, embed, upsert
+  ingest/        # crawl.py (done); chunk, embed, upsert (next)
   evals/         # eval harness
 docs/            # decisions and, later, the write-up
 compose.yaml     # Qdrant
-data/eval/       # eval datasets (planned, Phase 1)
-tests/           # pytest (added with the first code)
+data/
+  manifest.jsonl # committed corpus definition: url, title, program, dates, hash
+  raw/           # cached HTML (gitignored)
+  processed/     # extracted Markdown (gitignored)
+  eval/          # eval datasets (planned, Phase 1)
+tests/           # pytest, offline (no live network)
 ```
 
 ## Getting started
@@ -88,10 +96,19 @@ Checks:
 ```bash
 uv run ruff check .
 uv run ruff format --check .
-uv run pytest                        # exits 5 (no tests collected) until Phase 1
+uv run pytest
 ```
 
-There's no API to run yet. Phase 1 will add the run command here.
+### Build the corpus
+
+```bash
+uv run python -m support_desk_assistant.ingest.crawl              # all 5 programs
+uv run python -m support_desk_assistant.ingest.crawl --program ei --refresh
+```
+
+The crawler respects robots.txt, sends at most 1 request per second with a descriptive User-Agent, and caches raw HTML so re-runs don't download again. It writes `data/manifest.jsonl`.
+
+There's no API to run yet.
 
 ## License
 
