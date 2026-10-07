@@ -14,7 +14,13 @@ dependencies = [
     "markdownify>=1.2.3",
     "protego>=0.7.0",
     "pydantic-settings>=2.15.0",
+    "qdrant-client>=1.19.1",
+    "voyageai>=0.5.0",
 ]
+
+[project.scripts]
+sda-ingest = "support_desk_assistant.ingest.__main__:main"
+sda-search = "support_desk_assistant.retrieve:main"
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13"]
@@ -41,6 +47,10 @@ quote-style = "double"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = ["-ra", "--strict-markers"]
+filterwarnings = [
+  # qdrant-client ":memory:" mode ignores payload indexes; the server honours them
+  "ignore:Payload indexes have no effect in the local Qdrant:UserWarning",
+]
 
 [dependency-groups]
 dev = [

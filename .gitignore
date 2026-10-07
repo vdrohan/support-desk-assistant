@@ -226,3 +226,5 @@ __marimo__/
 data/raw/
 data/processed/
 .DS_Store
+data/chunks.jsonl
+data/cache/
