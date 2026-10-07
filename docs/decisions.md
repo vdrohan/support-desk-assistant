@@ -71,3 +71,56 @@ Short architecture decision records. Newest decisions go at the bottom. If a dec
   - *A hand-written wildcard check on top of it:* parsing code we'd have to own.
   - *trafilatura:* heuristic content detection can drop tables and alert boxes.
   - *html2text:* GPL-3.0 in an MIT repo.
+
+## 9. Chunking: heading-aware, with a context prefix and within-page dedup
+
+- **Decision:**
+  - Split each page at H2/H3. Inside a section, pack whole blank-line blocks (paragraphs, lists, tables) toward a target of about 350 tokens, with a hard max of 600.
+  - A single block over the max is split by lines; tables repeat their header row.
+  - Sections under 80 tokens are merged into a neighbour, keeping their heading as a Markdown line.
+  - The embedded text is `<title> > <H2> > <H3>` followed by the body. The payload stores the body and the heading path separately.
+  - Sizes are counted with voyage-4's own tokenizer.
+  - Chunk IDs are `uuid5(url | heading path | ordinal within that path)`.
+  - Exact repeats of blocks (8+ tokens) within a page are dropped, keeping the first occurrence.
+- **Reason:**
+  - canada.ca pages are already organised by question ("Who can apply", "How much you could get"), so sections are natural retrieval units, and the prefix carries their context into the vector.
+  - Splitting at block boundaries keeps lists and tables readable.
+  - Counting with the real tokenizer makes the hard max actually hard.
+  - IDs that depend on position within a heading path mean an edit in one section doesn't change IDs elsewhere, so re-runs upsert instead of duplicating.
+  - The median chunk is about 230 tokens, below the target, because headings are hard boundaries. That's accepted: single-topic chunks retrieve more precisely and cost less as LLM context.
+  - **Dedup:** interactive "get your instructions" pages include every scenario's full text. `child-passport.html` repeated about 85% of its blocks (it went from 238 chunks to 36). Corpus-wide, 1,702 repeats were dropped on 29 pages, and passport went from 445 chunks to 204. Without dedup, a single page filled most of the top-k slots for passport queries.
+- **Trade-off, to be validated by evals:** after dedup, later scenarios on `child-passport.html` (by mail, abroad, urgent, family-services worker) keep only their unique steps. The shared steps survive only under the first scenario, so a scenario-specific chunk can read as incomplete, and some leftover fragments are hard to follow. The Phase 1 eval set will include scenario-specific child-passport questions. If they show this matters, the fallback is a **structured parse of the instructions tool in the crawler**, producing one clean document per scenario.
+- **Rejected:**
+  - *Fixed-size windows with overlap:* they cut through lists and tables and lose the heading context.
+  - *Packing sibling H3s up to the target:* fewer chunks, but more of them mix topics.
+  - *A characters-÷-4 token estimate:* off by 15–25% on numeric text.
+  - *Indexing duplicates and diversifying at query time:* it pays the cost on every query and skews evals.
+
+## 10. Embeddings: voyage-4, 1024-dim float, asymmetric input_type, local cache
+
+- **Decision:** `voyage-4` with `output_dimension=1024` and `float` dtype. Chunks are embedded with `input_type="document"` and queries with `input_type="query"`. Vectors are cached in `data/cache/embeddings.sqlite`, keyed by `sha256(model | dimension | dtype | input_type | text)`. Retries with backoff happen on 429, 5xx and connection errors.
+- **Reason:**
+  - Voyage trains the query and document input types as a pair: queries are short questions and documents are passages.
+  - 1024 float is the model's default and best-quality setting. At about 735 points, storage doesn't matter.
+  - Because the cache key covers every setting that changes the vector, unchanged chunks are never re-embedded, and a model or dimension change can't serve stale vectors.
+  - The first full run cost 174k tokens. Re-runs with an unchanged corpus cost 0.
+- **Rejected:**
+  - *512 dimensions or int8:* smaller, but loses accuracy that isn't worth trading at this scale.
+  - *A JSONL cache:* not atomic, and larger.
+  - *The client's built-in `max_retries`:* our own loop is explicit, logs each retry without the key, and is testable with a fake client.
+
+## 11. Qdrant: versioned collection, deterministic IDs, scoped sync with a mass-delete guard
+
+- **Decision:**
+  - Collection `canada_docs_v1`, cosine distance, vector size taken from the actual model output, and a keyword payload index on `program`.
+  - Each sync is scoped to the programs being processed. It compares the stored `content_hash` values with the current chunks, embeds and upserts only new or changed chunks, and deletes chunks that no longer exist.
+  - It aborts if it would delete more than 20% of the points in scope, unless `--allow-mass-delete` is passed.
+  - Afterwards, it checks that the point count matches the chunk count.
+- **Reason:**
+  - Re-runs are idempotent: an unchanged corpus means 0 embeddings and 0 writes.
+  - With `--program X`, other programs' points can't be touched.
+  - The guard catches a broken crawl or a chunking bug before it empties the index.
+  - **Any change to the model, dimension, dtype or chunking means a new collection version (`_v2`).** Old and new can then be evaluated side by side, and switching is just a config change.
+- **Rejected:**
+  - *Drop-and-rebuild on every run:* re-embeds everything and leaves a window with an empty index.
+  - *Random point IDs:* duplicates on every re-run.
