@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 in progress.** The corpus crawler works. Chunking, embeddings, retrieval and the API don't exist yet. See [Roadmap](#roadmap).
+> **Status: Phase 1 in progress.** Crawl, chunk, embed, index and vector search work. Answer generation, the API and evals don't exist yet. See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -50,7 +50,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
-| 1 | RAG core: corpus crawler ✅, then chunking + embeddings, `/ask` endpoint with citations, small eval set in `data/eval/`, `sda-ingest` and `sda-evals` commands | 🚧 in progress |
+| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, then `/ask` endpoint with citations, small eval set in `data/eval/`, `sda-evals` | 🚧 in progress |
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
@@ -66,7 +66,8 @@ English Government of Canada pages from canada.ca for 5 citizen-service programs
 src/support_desk_assistant/
   config.py      # single source of config values (pydantic-settings)
   api/           # FastAPI app
-  ingest/        # crawl.py (done); chunk, embed, upsert (next)
+  ingest/        # crawl, chunk, embed, index (sda-ingest)
+  retrieve.py    # vector search (sda-search)
   evals/         # eval harness
 docs/            # decisions and, later, the write-up
 compose.yaml     # Qdrant
@@ -107,6 +108,18 @@ uv run python -m support_desk_assistant.ingest.crawl --program ei --refresh
 ```
 
 The crawler respects robots.txt, sends at most 1 request per second with a descriptive User-Agent, and caches raw HTML so re-runs don't download again. It writes `data/manifest.jsonl`.
+
+### Index and search
+
+With Qdrant reachable at `QDRANT_URL` (default `http://localhost:6333`, e.g. through an SSH tunnel) and `VOYAGE_API_KEY` in `.env`:
+
+```bash
+uv run sda-ingest --dry-run          # chunk only: counts and token distribution, no API calls
+uv run sda-ingest                    # chunk -> embed (cached) -> sync to Qdrant
+uv run sda-search "What documents do I need to apply for a SIN?" --program sin
+```
+
+Re-runs are idempotent: unchanged chunks aren't re-embedded or re-written.
 
 There's no API to run yet.
 
