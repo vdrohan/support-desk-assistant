@@ -4,6 +4,7 @@ uv run sda-search "How do I apply for EI?" [--program ei] [-k 5]
 """
 
 import argparse
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from qdrant_client import QdrantClient
@@ -30,13 +31,17 @@ def search(
     embedder: Embedder,
     qdrant: QdrantClient,
     program: str | None = None,
+    programs: Sequence[str] | None = None,
     k: int | None = None,
+    collection: str | None = None,
 ) -> list[Hit]:
-    """Embed ``query`` (input_type=query) and return the top-k chunks."""
+    """Embed ``query`` (input_type=query) and return the top-k chunks, optionally
+    restricted to one ``program`` or any of ``programs``."""
+    wanted = list(programs or ([program] if program else []))
     response = qdrant.query_points(
-        settings.index.collection,
+        collection or settings.index.collection,
         query=embedder.embed_query(query),
-        query_filter=program_filter([program]) if program else None,
+        query_filter=program_filter(wanted) if wanted else None,
         limit=k or settings.retrieval.top_k,
         with_payload=True,
     )

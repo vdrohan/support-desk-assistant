@@ -85,6 +85,14 @@ class RetrievalSettings(BaseModel):
     top_k: int = 5
 
 
+class EvalSettings(BaseModel):
+    """Retrieval eval (docs/decisions.md #12). Datasets are versioned files under
+    ``data/eval/``; never edit one that has published results, add ``_v2``."""
+
+    retrieval_dataset: str = "retrieval_v1.jsonl"
+    k: int = 5
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="SDA_", env_nested_delimiter="__", env_file=".env", extra="ignore"
@@ -102,6 +110,7 @@ class Settings(BaseSettings):
     embed: EmbedSettings = EmbedSettings()
     index: IndexSettings = IndexSettings()
     retrieval: RetrievalSettings = RetrievalSettings()
+    eval: EvalSettings = EvalSettings()
 
     @property
     def raw_dir(self) -> Path:
@@ -118,6 +127,14 @@ class Settings(BaseSettings):
     @property
     def chunks_path(self) -> Path:
         return self.data_dir / "chunks.jsonl"
+
+    @property
+    def eval_dir(self) -> Path:
+        return self.data_dir / "eval"
+
+    @property
+    def eval_results_dir(self) -> Path:
+        return self.eval_dir / "results"
 
     @property
     def embedding_cache_path(self) -> Path:

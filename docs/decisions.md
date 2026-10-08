@@ -124,3 +124,41 @@ Short architecture decision records. Newest decisions go at the bottom. If a dec
 - **Rejected:**
   - *Drop-and-rebuild on every run:* re-embeds everything and leaves a window with an empty index.
   - *Random point IDs:* duplicates on every re-run.
+
+## 12. Retrieval eval: versioned question set, page-hit and answer-hit, oracle routing
+
+- **Decision:**
+  - **Dataset:** `data/eval/retrieval_v1.jsonl` (committed) holds 37 questions: 10 written by a human, kept word for word including typos, and 27 generated and worded the way a citizen would ask, weighted by corpus size.
+  - **Categories:** `direct`, `colloquial`, `known_issue`, `ambiguous`, `out_of_corpus`.
+  - **Labels:** each question has `expected_urls` (any one counts) and `key_facts`, short phrases copied exactly from the page.
+  - **Validator:** runs before every eval and fails on any key fact that isn't on an expected page. It warns when a fact is on the page but in no chunk.
+  - **Runner (`sda-eval-retrieval`):** asks every question **unfiltered** and again **filtered to its expected programs** (the "oracle").
+  - **Metrics:** page hit@1, page hit@k, MRR@k and answer hit@k, overall and by program, category and source, with *n* on every row.
+  - **Out-of-corpus questions** get no hit metrics. Instead their top-1 scores are compared with those of answerable questions.
+  - **Results:** written to `data/eval/results/<collection>_<date>.{json,md}`, with the git SHA, dataset hash and settings.
+- **Why two hit metrics:**
+  - **Page hit** asks: did we retrieve the right *document*? It is what citations and links depend on. But a long page (the child passport page has 36 chunks) can "hit" with a chunk that doesn't contain the answer.
+  - **Answer hit** asks: is the answer *text* in what we retrieved? A key fact counts if it appears anywhere in the title, heading path or body of a top-k chunk, after normalizing case, whitespace, quotes and Markdown. That's exactly what the answer-writing model will see. It can also credit a different page that states the same fact.
+  - When the two disagree, that is diagnostic: right page but wrong chunk points at chunking; right fact but wrong page points at duplicated content.
+- **Why the oracle mode:** the gap between filtered and unfiltered results is the most that program routing (Phase 2 triage) could add to retrieval. It tells us whether routing is worth building before we build it.
+- **Rules:**
+  - The set is frozen before its first run.
+  - After that, labels change only to fix genuine labelling errors, and each fix is explained in the item's `notes`.
+  - New or reworded questions go into `retrieval_v2.jsonl`.
+  - Any change to chunking, embeddings or the collection is judged by comparing result JSONs on the same dataset version.
+- **Rejected:**
+  - *LLM-judged relevance:* costs tokens on every run, isn't deterministic, and isn't needed before generation exists.
+  - *Only page-level labels:* would hide the chunk-level failures that dedup and chunking can cause.
+  - *Only generated questions:* they tend to echo the corpus wording, so human questions are tracked as a separate group.
+
+## 13. Known corpus gaps
+
+Found while labelling `retrieval_v1`. Each is a content problem, not a retrieval one, so it's tracked here rather than hidden in eval numbers. Affected eval items reference this entry in their `notes`.
+
+| Gap | Effect | Likely fix |
+|---|---|---|
+| **Passport fees are loaded by JavaScript.** The static HTML has placeholders, so the corpus reads `[Error loading fee. Check the fee list.]` (135 times on `child-passport.html` alone). | No fee question is answerable. `gen-gap-01` is classed `corpus_gap`, with no hit metrics. | Add the passport fee-list page (or the JSON/fragment its script loads) to the crawl as a separate document, then replace the placeholders at extraction time or index the fee list on its own. Check robots.txt and the terms first. |
+| **The service-standards "table" on `processing-times.html` is built from `div`s.** markdownify writes each cell as its own paragraph (`10Footnote *`, then `business days`). | Processing times are retrievable, but the numbers are split from their labels and footnote markers are mixed in (`human-02`, `gen-pp-01`). | Add an extraction rule for that layout: join each row's label, value and unit into one line (or rebuild a real table), and drop the `Footnote` markers. Re-extract from cache; no re-crawl needed. |
+| **The adult passport document checklist sits behind a selector.** `new-adult-passport.html` is a "Where are you right now?" chooser, and the checklist lives on sub-pages the crawler never reached. | Document questions only partially answerable (`human-07`). | Add the chooser's target pages as extra seeds (or allow depth 3 for passport), within the same prefix and robots rules. |
+
+When a fix lands, re-crawl or re-extract and bump the collection version. The affected items stay in `retrieval_v1` (labels change only if the fix creates a genuine labelling error), so the before/after effect shows up in the same dataset version.
