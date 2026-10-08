@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
     count = voyage_token_counter(settings.embed.model)
     dropped: dict[str, int] = {}
     chunks = chunk_corpus(settings, count, programs, dropped)
-    write_chunks(settings.chunks_path, chunks)
+    write_chunks(settings.chunks_path, chunks, programs)
     report = ChunkReport.build(chunks, settings.chunk, dropped)
     for line in report.lines():
         print(line)

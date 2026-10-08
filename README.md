@@ -121,6 +121,13 @@ uv run sda-search "What documents do I need to apply for a SIN?" --program sin
 
 Re-runs are idempotent: unchanged chunks aren't re-embedded or re-written.
 
+### Evaluate retrieval
+
+```bash
+uv run sda-eval-retrieval --validate   # check the dataset against the corpus, no API calls
+uv run sda-eval-retrieval              # writes data/eval/results/<collection>_<date>.{json,md}
+```
+
 There's no API to run yet.
 
 ## License

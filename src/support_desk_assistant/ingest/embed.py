@@ -172,5 +172,14 @@ class Embedder:
         return [vectors[k] for k in keys]
 
     def embed_query(self, text: str) -> list[float]:
-        """Embed a search query with input_type=query (not cached)."""
-        return self._call([text], self.cfg.query_input_type)[0]
+        """Embed a search query with input_type=query, cached when a cache is set
+        (the key includes input_type, so queries never collide with documents)."""
+        input_type = self.cfg.query_input_type
+        key = cache_key(text, self.cfg, input_type)
+        if self.cache and (hit := self.cache.get_many([key])):
+            self.stats.cache_hits += 1
+            return hit[key]
+        vector = self._call([text], input_type)[0]
+        if self.cache:
+            self.cache.put_many({key: vector})
+        return vector

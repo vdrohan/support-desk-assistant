@@ -21,6 +21,7 @@ dependencies = [
 [project.scripts]
 sda-ingest = "support_desk_assistant.ingest.__main__:main"
 sda-search = "support_desk_assistant.retrieve:main"
+sda-eval-retrieval = "support_desk_assistant.evals.retrieval:main"
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13"]

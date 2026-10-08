@@ -11,6 +11,7 @@ from support_desk_assistant.ingest.chunk import (
     pack_blocks,
     parse_page,
     split_oversized_block,
+    write_chunks,
 )
 
 URL = "https://www.canada.ca/en/services/benefits/ei/apply.html"
@@ -265,3 +266,16 @@ def test_dedup_is_per_page_not_corpus_wide():
     first = chunks(f"# T\n\n## A\n\n{STEPS}")
     second = chunks(f"# T\n\n## A\n\n{STEPS}", url=URL.replace("apply", "other"))
     assert STEPS in first[0].text and STEPS in second[0].text
+
+
+def test_write_chunks_for_some_programs_keeps_the_others(tmp_path):
+    path = tmp_path / "chunks.jsonl"
+    ei = chunks()
+    sin = chunk_page(
+        PAGE, url=URL.replace("ei", "sin"), program="sin", date_modified=None, cfg=CFG,
+        count=word_count,
+    )  # fmt: skip
+    write_chunks(path, ei + sin, ["ei", "sin"])
+    write_chunks(path, sin[:1], ["sin"])  # e.g. sda-ingest --program sin
+    programs = [json.loads(line)["program"] for line in path.read_text().splitlines()]
+    assert programs.count("ei") == len(ei) and programs.count("sin") == 1

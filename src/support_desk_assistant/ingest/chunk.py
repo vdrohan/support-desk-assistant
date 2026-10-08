@@ -357,9 +357,22 @@ def chunk_corpus(
     return chunks
 
 
-def write_chunks(path: Path, chunks: Iterable[Chunk]) -> None:
+def write_chunks(
+    path: Path, chunks: Iterable[Chunk], programs: Iterable[str] | None = None
+) -> None:
+    """Write chunks as JSONL. With ``programs``, only those programs' rows are
+    replaced; rows for other programs already in the file are kept."""
+    rows = [json.dumps(asdict(c), ensure_ascii=False) for c in chunks]
+    if programs is not None and path.exists():
+        replaced = set(programs)
+        kept = [
+            line
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and json.loads(line)["program"] not in replaced
+        ]
+        rows = kept + rows
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(asdict(c), ensure_ascii=False) + "\n" for c in chunks))
+    path.write_text("".join(row + "\n" for row in rows), encoding="utf-8")
 
 
 @dataclass
