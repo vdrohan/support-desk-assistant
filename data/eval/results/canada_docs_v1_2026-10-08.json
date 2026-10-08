@@ -1,0 +1,1672 @@
+{
+  "meta": {
+    "created_at": "2026-10-08T00:05:35+00:00",
+    "git_sha": "9d7ef80",
+    "git_dirty": true,
+    "collection": "canada_docs_v1",
+    "k": 5,
+    "dataset": "retrieval_v1.jsonl",
+    "dataset_sha256": "75a0703054bbbc253566ee9bc093b65a922a4d15ca2cef8e8bed44f4fe9230b3",
+    "embed": {
+      "model": "voyage-4",
+      "output_dimension": 1024,
+      "output_dtype": "float"
+    },
+    "chunk": {
+      "target_tokens": 350,
+      "max_tokens": 600,
+      "min_tokens": 80,
+      "dedup_min_tokens": 8
+    },
+    "questions": 37,
+    "unreachable_facts": {}
+  },
+  "metrics": {
+    "unfiltered": {
+      "overall": {
+        "n": 34,
+        "page_hit@1": 0.647,
+        "page_hit@5": 0.912,
+        "mrr@5": 0.749,
+        "answer_hit@5": 0.882
+      },
+      "program_group": {
+        "cpp": {
+          "n": 6,
+          "page_hit@1": 0.667,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.792,
+          "answer_hit@5": 0.833
+        },
+        "cpp+ei+oas": {
+          "n": 2,
+          "page_hit@1": 0.0,
+          "page_hit@5": 0.0,
+          "mrr@5": 0.0,
+          "answer_hit@5": 0.0
+        },
+        "cpp+oas": {
+          "n": 1,
+          "page_hit@1": 0.0,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.5,
+          "answer_hit@5": 1.0
+        },
+        "ei": {
+          "n": 9,
+          "page_hit@1": 0.667,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.806,
+          "answer_hit@5": 1.0
+        },
+        "none": {
+          "n": 0
+        },
+        "oas": {
+          "n": 4,
+          "page_hit@1": 1.0,
+          "page_hit@5": 1.0,
+          "mrr@5": 1.0,
+          "answer_hit@5": 1.0
+        },
+        "passport": {
+          "n": 9,
+          "page_hit@1": 0.556,
+          "page_hit@5": 0.889,
+          "mrr@5": 0.661,
+          "answer_hit@5": 0.889
+        },
+        "sin": {
+          "n": 3,
+          "page_hit@1": 1.0,
+          "page_hit@5": 1.0,
+          "mrr@5": 1.0,
+          "answer_hit@5": 1.0
+        }
+      },
+      "category": {
+        "ambiguous": {
+          "n": 3,
+          "page_hit@1": 0.0,
+          "page_hit@5": 0.333,
+          "mrr@5": 0.167,
+          "answer_hit@5": 0.333
+        },
+        "colloquial": {
+          "n": 15,
+          "page_hit@1": 0.667,
+          "page_hit@5": 0.933,
+          "mrr@5": 0.763,
+          "answer_hit@5": 0.867
+        },
+        "corpus_gap": {
+          "n": 0
+        },
+        "direct": {
+          "n": 12,
+          "page_hit@1": 0.75,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.833,
+          "answer_hit@5": 1.0
+        },
+        "known_issue": {
+          "n": 4,
+          "page_hit@1": 0.75,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.875,
+          "answer_hit@5": 1.0
+        },
+        "out_of_corpus": {
+          "n": 0
+        }
+      },
+      "source": {
+        "generated": {
+          "n": 24,
+          "page_hit@1": 0.583,
+          "page_hit@5": 0.917,
+          "mrr@5": 0.717,
+          "answer_hit@5": 0.875
+        },
+        "human": {
+          "n": 10,
+          "page_hit@1": 0.8,
+          "page_hit@5": 0.9,
+          "mrr@5": 0.825,
+          "answer_hit@5": 0.9
+        }
+      }
+    },
+    "oracle": {
+      "overall": {
+        "n": 34,
+        "page_hit@1": 0.676,
+        "page_hit@5": 0.912,
+        "mrr@5": 0.763,
+        "answer_hit@5": 0.882
+      },
+      "program_group": {
+        "cpp": {
+          "n": 6,
+          "page_hit@1": 0.667,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.792,
+          "answer_hit@5": 0.833
+        },
+        "cpp+ei+oas": {
+          "n": 2,
+          "page_hit@1": 0.0,
+          "page_hit@5": 0.0,
+          "mrr@5": 0.0,
+          "answer_hit@5": 0.0
+        },
+        "cpp+oas": {
+          "n": 1,
+          "page_hit@1": 1.0,
+          "page_hit@5": 1.0,
+          "mrr@5": 1.0,
+          "answer_hit@5": 1.0
+        },
+        "ei": {
+          "n": 9,
+          "page_hit@1": 0.667,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.806,
+          "answer_hit@5": 1.0
+        },
+        "oas": {
+          "n": 4,
+          "page_hit@1": 1.0,
+          "page_hit@5": 1.0,
+          "mrr@5": 1.0,
+          "answer_hit@5": 1.0
+        },
+        "passport": {
+          "n": 9,
+          "page_hit@1": 0.556,
+          "page_hit@5": 0.889,
+          "mrr@5": 0.661,
+          "answer_hit@5": 0.889
+        },
+        "sin": {
+          "n": 3,
+          "page_hit@1": 1.0,
+          "page_hit@5": 1.0,
+          "mrr@5": 1.0,
+          "answer_hit@5": 1.0
+        }
+      },
+      "category": {
+        "ambiguous": {
+          "n": 3,
+          "page_hit@1": 0.333,
+          "page_hit@5": 0.333,
+          "mrr@5": 0.333,
+          "answer_hit@5": 0.333
+        },
+        "colloquial": {
+          "n": 15,
+          "page_hit@1": 0.667,
+          "page_hit@5": 0.933,
+          "mrr@5": 0.763,
+          "answer_hit@5": 0.867
+        },
+        "direct": {
+          "n": 12,
+          "page_hit@1": 0.75,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.833,
+          "answer_hit@5": 1.0
+        },
+        "known_issue": {
+          "n": 4,
+          "page_hit@1": 0.75,
+          "page_hit@5": 1.0,
+          "mrr@5": 0.875,
+          "answer_hit@5": 1.0
+        }
+      },
+      "source": {
+        "generated": {
+          "n": 24,
+          "page_hit@1": 0.625,
+          "page_hit@5": 0.917,
+          "mrr@5": 0.737,
+          "answer_hit@5": 0.875
+        },
+        "human": {
+          "n": 10,
+          "page_hit@1": 0.8,
+          "page_hit@5": 0.9,
+          "mrr@5": 0.825,
+          "answer_hit@5": 0.9
+        }
+      }
+    }
+  },
+  "scores": {
+    "answerable": {
+      "n": 31,
+      "min": 0.526,
+      "p10": 0.559,
+      "median": 0.626,
+      "max": 0.7
+    },
+    "ambiguous": {
+      "n": 3,
+      "min": 0.461,
+      "p10": 0.461,
+      "median": 0.465,
+      "max": 0.525
+    },
+    "out_of_corpus": {
+      "n": 2,
+      "min": 0.448,
+      "p10": 0.448,
+      "median": 0.486,
+      "max": 0.525
+    },
+    "out_of_corpus_scores": {
+      "gen-ooc-01": 0.5247,
+      "gen-ooc-02": 0.448
+    },
+    "corpus_gap": {
+      "gen-gap-01": {
+        "question": "How much does a passport cost?",
+        "top1_score": 0.6091,
+        "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html"
+      }
+    },
+    "threshold_at_max_ooc": {
+      "threshold": 0.525,
+      "answerable_refused": 0,
+      "answerable_n": 31,
+      "answerable_refused_rate": 0.0
+    }
+  },
+  "misses": [
+    {
+      "id": "human-10",
+      "mode": "unfiltered",
+      "question": "When do I get paid? ",
+      "page_miss": true,
+      "answer_miss": true,
+      "rank": null,
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/receive-benefits.html"
+      ],
+      "top1": {
+        "score": 0.4647,
+        "url": "https://www.canada.ca/en/services/benefits/ei/various-types-earnings.html",
+        "path": "Employment Insurance and the various types of earnings > Earnings paid or payable"
+      }
+    },
+    {
+      "id": "human-10",
+      "mode": "oracle",
+      "question": "When do I get paid? ",
+      "page_miss": true,
+      "answer_miss": true,
+      "rank": null,
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/receive-benefits.html"
+      ],
+      "top1": {
+        "score": 0.4647,
+        "url": "https://www.canada.ca/en/services/benefits/ei/various-types-earnings.html",
+        "path": "Employment Insurance and the various types of earnings > Earnings paid or payable"
+      }
+    },
+    {
+      "id": "gen-cpp-06",
+      "mode": "unfiltered",
+      "question": "Can my wife and I split our CPP to pay less tax?",
+      "page_miss": false,
+      "answer_miss": true,
+      "rank": 1,
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/share-cpp.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html"
+      ],
+      "top1": {
+        "score": 0.5684,
+        "url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+        "path": "How much you could receive > Situations that can affect your pension amount > Periods of low or no earnings"
+      }
+    },
+    {
+      "id": "gen-cpp-06",
+      "mode": "oracle",
+      "question": "Can my wife and I split our CPP to pay less tax?",
+      "page_miss": false,
+      "answer_miss": true,
+      "rank": 1,
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/share-cpp.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html"
+      ],
+      "top1": {
+        "score": 0.5684,
+        "url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+        "path": "How much you could receive > Situations that can affect your pension amount > Periods of low or no earnings"
+      }
+    },
+    {
+      "id": "gen-pp-05",
+      "mode": "unfiltered",
+      "question": "Do I need someone to vouch for me when I renew my passport?",
+      "page_miss": true,
+      "answer_miss": true,
+      "rank": null,
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport.html"
+      ],
+      "top1": {
+        "score": 0.5492,
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/help-centre/apply.html",
+        "path": "Applying for a passport > Submitting your application"
+      }
+    },
+    {
+      "id": "gen-pp-05",
+      "mode": "oracle",
+      "question": "Do I need someone to vouch for me when I renew my passport?",
+      "page_miss": true,
+      "answer_miss": true,
+      "rank": null,
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport.html"
+      ],
+      "top1": {
+        "score": 0.5492,
+        "url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/help-centre/apply.html",
+        "path": "Applying for a passport > Submitting your application"
+      }
+    },
+    {
+      "id": "gen-amb-01",
+      "mode": "unfiltered",
+      "question": "When will the money start coming in after I apply?",
+      "page_miss": true,
+      "answer_miss": true,
+      "rank": null,
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html"
+      ],
+      "top1": {
+        "score": 0.525,
+        "url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/guaranteed-income-supplement/allowance/after-apply.html",
+        "path": "After you apply > Application processing times > What your letter could include"
+      }
+    },
+    {
+      "id": "gen-amb-01",
+      "mode": "oracle",
+      "question": "When will the money start coming in after I apply?",
+      "page_miss": true,
+      "answer_miss": true,
+      "rank": null,
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html"
+      ],
+      "top1": {
+        "score": 0.525,
+        "url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/guaranteed-income-supplement/allowance/after-apply.html",
+        "path": "After you apply > Application processing times > What your letter could include"
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": "human-01",
+      "question": "Can I get EI if I quit my job?",
+      "category": "direct",
+      "source": "human",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6157,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html",
+      "top1_path": "EI regular benefits: Do you qualify > Situations where you may not be eligible",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html"
+      ]
+    },
+    {
+      "id": "human-01",
+      "question": "Can I get EI if I quit my job?",
+      "category": "direct",
+      "source": "human",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6157,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html",
+      "top1_path": "EI regular benefits: Do you qualify > Situations where you may not be eligible",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html"
+      ]
+    },
+    {
+      "id": "human-02",
+      "question": "How long does a passport take?",
+      "category": "direct",
+      "source": "human",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6652,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html",
+      "top1_path": "Check our service standards : Canadian passports and other travel documents",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html",
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/check-passport-travel-document-application.html"
+      ]
+    },
+    {
+      "id": "human-02",
+      "question": "How long does a passport take?",
+      "category": "direct",
+      "source": "human",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6652,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html",
+      "top1_path": "Check our service standards : Canadian passports and other travel documents",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html",
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/check-passport-travel-document-application.html"
+      ]
+    },
+    {
+      "id": "human-03",
+      "question": "Who is eligible for EI?",
+      "category": "direct",
+      "source": "human",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6429,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html",
+      "top1_path": "EI regular benefits: Do you qualify > Eligibility for specific work situations",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html",
+        "https://www.canada.ca/en/services/benefits/ei.html"
+      ]
+    },
+    {
+      "id": "human-03",
+      "question": "Who is eligible for EI?",
+      "category": "direct",
+      "source": "human",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6429,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html",
+      "top1_path": "EI regular benefits: Do you qualify > Eligibility for specific work situations",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html",
+        "https://www.canada.ca/en/services/benefits/ei.html"
+      ]
+    },
+    {
+      "id": "human-04",
+      "question": "Hopw much EI can i get? ",
+      "category": "colloquial",
+      "source": "human",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6646,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html",
+      "top1_path": "EI regular benefits: How much you could receive > You could get up to 55% of your earnings",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html",
+        "https://www.canada.ca/en/services/benefits/ei/ei-sickness.html",
+        "https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental.html"
+      ]
+    },
+    {
+      "id": "human-04",
+      "question": "Hopw much EI can i get? ",
+      "category": "colloquial",
+      "source": "human",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6646,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html",
+      "top1_path": "EI regular benefits: How much you could receive > You could get up to 55% of your earnings",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/benefit-amount.html",
+        "https://www.canada.ca/en/services/benefits/ei/ei-sickness.html",
+        "https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental.html"
+      ]
+    },
+    {
+      "id": "human-05",
+      "question": "DO I need to get new SIN when I got permanent residenship ",
+      "category": "colloquial",
+      "source": "human",
+      "program_group": "sin",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.559,
+      "top1_url": "https://www.canada.ca/en/employment-social-development/services/sin/update.html",
+      "top1_path": "Update your Social Insurance Number record > When to update your record",
+      "expected_urls": [
+        "https://www.canada.ca/en/employment-social-development/services/sin/temporary-residents.html",
+        "https://www.canada.ca/en/employment-social-development/services/sin/update.html"
+      ]
+    },
+    {
+      "id": "human-05",
+      "question": "DO I need to get new SIN when I got permanent residenship ",
+      "category": "colloquial",
+      "source": "human",
+      "program_group": "sin",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.559,
+      "top1_url": "https://www.canada.ca/en/employment-social-development/services/sin/update.html",
+      "top1_path": "Update your Social Insurance Number record > When to update your record",
+      "expected_urls": [
+        "https://www.canada.ca/en/employment-social-development/services/sin/temporary-residents.html",
+        "https://www.canada.ca/en/employment-social-development/services/sin/update.html"
+      ]
+    },
+    {
+      "id": "human-06",
+      "question": "How long does it take to get new SIN? ",
+      "category": "direct",
+      "source": "human",
+      "program_group": "sin",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6286,
+      "top1_url": "https://www.canada.ca/en/employment-social-development/services/sin/update.html",
+      "top1_path": "Update your Social Insurance Number record > When to update your record > Extend a temporary SIN",
+      "expected_urls": [
+        "https://www.canada.ca/en/employment-social-development/services/sin/status.html",
+        "https://www.canada.ca/en/employment-social-development/services/sin/update.html",
+        "https://www.canada.ca/en/employment-social-development/services/sin/temporary-residents.html"
+      ]
+    },
+    {
+      "id": "human-06",
+      "question": "How long does it take to get new SIN? ",
+      "category": "direct",
+      "source": "human",
+      "program_group": "sin",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6286,
+      "top1_url": "https://www.canada.ca/en/employment-social-development/services/sin/update.html",
+      "top1_path": "Update your Social Insurance Number record > When to update your record > Extend a temporary SIN",
+      "expected_urls": [
+        "https://www.canada.ca/en/employment-social-development/services/sin/status.html",
+        "https://www.canada.ca/en/employment-social-development/services/sin/update.html",
+        "https://www.canada.ca/en/employment-social-development/services/sin/temporary-residents.html"
+      ]
+    },
+    {
+      "id": "human-07",
+      "question": "What documents do I need to apply for a passport? ",
+      "category": "direct",
+      "source": "human",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 4,
+      "answer_hit": true,
+      "top1_score": 0.6748,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/certified-true-copies.html",
+      "top1_path": "Get certified true copies of a passport or other travel document > How to get certified true copies of your passport or other travel document",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport.html",
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/new-adult-passport/get-application-form.html"
+      ]
+    },
+    {
+      "id": "human-07",
+      "question": "What documents do I need to apply for a passport? ",
+      "category": "direct",
+      "source": "human",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 4,
+      "answer_hit": true,
+      "top1_score": 0.6748,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/certified-true-copies.html",
+      "top1_path": "Get certified true copies of a passport or other travel document > How to get certified true copies of your passport or other travel document",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport.html",
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/new-adult-passport/get-application-form.html"
+      ]
+    },
+    {
+      "id": "human-08",
+      "question": "Can I get passport fast? ",
+      "category": "colloquial",
+      "source": "human",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6436,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/urgent-emergency-passport.html",
+      "top1_path": "Get urgent, express or emergency weekend passport services",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/urgent-emergency-passport.html",
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html"
+      ]
+    },
+    {
+      "id": "human-08",
+      "question": "Can I get passport fast? ",
+      "category": "colloquial",
+      "source": "human",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6436,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/urgent-emergency-passport.html",
+      "top1_path": "Get urgent, express or emergency weekend passport services",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/urgent-emergency-passport.html",
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html"
+      ]
+    },
+    {
+      "id": "human-09",
+      "question": "How to qualify for OAS? ",
+      "category": "direct",
+      "source": "human",
+      "program_group": "oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.589,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/eligibility.html",
+      "top1_path": "Do you qualify > Who can receive an Old Age Security pension",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/eligibility.html"
+      ]
+    },
+    {
+      "id": "human-09",
+      "question": "How to qualify for OAS? ",
+      "category": "direct",
+      "source": "human",
+      "program_group": "oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.589,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/eligibility.html",
+      "top1_path": "Do you qualify > Who can receive an Old Age Security pension",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/eligibility.html"
+      ]
+    },
+    {
+      "id": "human-10",
+      "question": "When do I get paid? ",
+      "category": "ambiguous",
+      "source": "human",
+      "program_group": "cpp+ei+oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": null,
+      "answer_hit": false,
+      "top1_score": 0.4647,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/various-types-earnings.html",
+      "top1_path": "Employment Insurance and the various types of earnings > Earnings paid or payable",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/receive-benefits.html"
+      ]
+    },
+    {
+      "id": "human-10",
+      "question": "When do I get paid? ",
+      "category": "ambiguous",
+      "source": "human",
+      "program_group": "cpp+ei+oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": null,
+      "answer_hit": false,
+      "top1_score": 0.4647,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/various-types-earnings.html",
+      "top1_path": "Employment Insurance and the various types of earnings > Earnings paid or payable",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/receive-benefits.html"
+      ]
+    },
+    {
+      "id": "gen-ei-01",
+      "question": "I'm off work with a bad back. How long can EI cover me?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.6045,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-sickness/after-applying.html",
+      "top1_path": "EI sickness benefits: After you apply > When payments end",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-sickness.html",
+        "https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html"
+      ]
+    },
+    {
+      "id": "gen-ei-01",
+      "question": "I'm off work with a bad back. How long can EI cover me?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.6045,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-sickness/after-applying.html",
+      "top1_path": "EI sickness benefits: After you apply > When payments end",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-sickness.html",
+        "https://www.canada.ca/en/services/benefits/ei/ei-sickness/benefit-amount.html"
+      ]
+    },
+    {
+      "id": "gen-ei-02",
+      "question": "My dad is terminally ill and I need to stay home with him. Is there EI for that?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.623,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/caregiving.html",
+      "top1_path": "EI caregiving benefits",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/caregiving.html",
+        "https://www.canada.ca/en/services/benefits/ei/caregiving/after-applying.html"
+      ]
+    },
+    {
+      "id": "gen-ei-02",
+      "question": "My dad is terminally ill and I need to stay home with him. Is there EI for that?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.623,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/caregiving.html",
+      "top1_path": "EI caregiving benefits",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/caregiving.html",
+        "https://www.canada.ca/en/services/benefits/ei/caregiving/after-applying.html"
+      ]
+    },
+    {
+      "id": "gen-ei-03",
+      "question": "Do I have to check in with EI every week to keep getting paid?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 4,
+      "answer_hit": true,
+      "top1_score": 0.6073,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/while-receiving.html",
+      "top1_path": "EI regular benefits: While on EI > Continue to submit your reports",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-paper-reports.html",
+        "https://www.canada.ca/en/services/benefits/ei/caregiving/after-applying.html"
+      ]
+    },
+    {
+      "id": "gen-ei-03",
+      "question": "Do I have to check in with EI every week to keep getting paid?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 4,
+      "answer_hit": true,
+      "top1_score": 0.6073,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/while-receiving.html",
+      "top1_path": "EI regular benefits: While on EI > Continue to submit your reports",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-paper-reports.html",
+        "https://www.canada.ca/en/services/benefits/ei/caregiving/after-applying.html"
+      ]
+    },
+    {
+      "id": "gen-ei-04",
+      "question": "If I pick up a few shifts while I'm on EI, do I lose my benefits?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5782,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/while-receiving.html",
+      "top1_path": "EI regular benefits: While on EI > Situations that may impact your benefits > Earning money while receiving benefits",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/while-receiving.html"
+      ]
+    },
+    {
+      "id": "gen-ei-04",
+      "question": "If I pick up a few shifts while I'm on EI, do I lose my benefits?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5782,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/while-receiving.html",
+      "top1_path": "EI regular benefits: While on EI > Situations that may impact your benefits > Earning money while receiving benefits",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/while-receiving.html"
+      ]
+    },
+    {
+      "id": "gen-ei-05",
+      "question": "We're having a baby in the spring. How long can I get EI for maternity leave?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.6795,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/eligibility.html",
+      "top1_path": "EI maternity and parental benefits: Eligibility > Eligibility period > Parental benefits",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental.html"
+      ]
+    },
+    {
+      "id": "gen-ei-05",
+      "question": "We're having a baby in the spring. How long can I get EI for maternity leave?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.6795,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental/eligibility.html",
+      "top1_path": "EI maternity and parental benefits: Eligibility > Eligibility period > Parental benefits",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-maternity-parental.html"
+      ]
+    },
+    {
+      "id": "gen-ei-06",
+      "question": "I applied for EI last week. When should the first deposit show up?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6273,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+      "top1_path": "EI regular benefits: After you apply > Once your claim is processed > If you’re eligible",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html"
+      ]
+    },
+    {
+      "id": "gen-ei-06",
+      "question": "I applied for EI last week. When should the first deposit show up?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "ei",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6273,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+      "top1_path": "EI regular benefits: After you apply > Once your claim is processed > If you’re eligible",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-01",
+      "question": "What's the most I could get from CPP each month?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6376,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+      "top1_path": "How much you could receive > How we calculate your CPP payment",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-01",
+      "question": "What's the most I could get from CPP each month?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6376,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+      "top1_path": "How much you could receive > How we calculate your CPP payment",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-02",
+      "question": "If I hold off on CPP until 70, how much more do I get?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 4,
+      "answer_hit": true,
+      "top1_score": 0.6263,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount/video-how-much.html",
+      "top1_path": "The CPP retirement pension: How much will you get",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/when-start.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-02",
+      "question": "If I hold off on CPP until 70, how much more do I get?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 4,
+      "answer_hit": true,
+      "top1_score": 0.6263,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount/video-how-much.html",
+      "top1_path": "The CPP retirement pension: How much will you get",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/when-start.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-03",
+      "question": "How big is the cut if I take CPP at 60?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5276,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/when-start.html",
+      "top1_path": "CPP retirement pension: When to start your pension > How age affects your pension",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/when-start.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-03",
+      "question": "How big is the cut if I take CPP at 60?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5276,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/when-start.html",
+      "top1_path": "CPP retirement pension: When to start your pension > How age affects your pension",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/when-start.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-04",
+      "question": "My husband died last month. Can I get some of his CPP?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6353,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html",
+      "top1_path": "Survivor's pension > Step 1 Do you qualify",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-04",
+      "question": "My husband died last month. Can I get some of his CPP?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6353,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html",
+      "top1_path": "Survivor's pension > Step 1 Do you qualify",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-05",
+      "question": "I've started my CPP but want to keep working. Do I still pay into it?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.5886,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/eligibility.html",
+      "top1_path": "Do you qualify > Working while receiving CPP > More information about the CPP Post-Retirement Benefit",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-post-retirement.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-05",
+      "question": "I've started my CPP but want to keep working. Do I still pay into it?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.5886,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/eligibility.html",
+      "top1_path": "Do you qualify > Working while receiving CPP > More information about the CPP Post-Retirement Benefit",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-post-retirement.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-06",
+      "question": "Can my wife and I split our CPP to pay less tax?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": false,
+      "top1_score": 0.5684,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+      "top1_path": "How much you could receive > Situations that can affect your pension amount > Periods of low or no earnings",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/share-cpp.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html"
+      ]
+    },
+    {
+      "id": "gen-cpp-06",
+      "question": "Can my wife and I split our CPP to pay less tax?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "cpp",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": false,
+      "top1_score": 0.5684,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+      "top1_path": "How much you could receive > Situations that can affect your pension amount > Periods of low or no earnings",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/share-cpp.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html"
+      ]
+    },
+    {
+      "id": "gen-oas-01",
+      "question": "Do I have to fill out an application to get my old age pension?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5719,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/apply.html",
+      "top1_path": "Apply, delay, or change your start date > Most people don't need to apply > You will need to take action if",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/apply.html"
+      ]
+    },
+    {
+      "id": "gen-oas-01",
+      "question": "Do I have to fill out an application to get my old age pension?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5719,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/apply.html",
+      "top1_path": "Apply, delay, or change your start date > Most people don't need to apply > You will need to take action if",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/apply.html"
+      ]
+    },
+    {
+      "id": "gen-oas-02",
+      "question": "I'm 67, still working and earning well. Will they claw back my OAS?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5263,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/benefit-amount.html",
+      "top1_path": "How much you could receive > How we calculate your Old Age Security payment > Recovery tax for income over $93,454",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/recovery-tax.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/benefit-amount.html"
+      ]
+    },
+    {
+      "id": "gen-oas-02",
+      "question": "I'm 67, still working and earning well. Will they claw back my OAS?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5263,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/benefit-amount.html",
+      "top1_path": "How much you could receive > How we calculate your Old Age Security payment > Recovery tax for income over $93,454",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/recovery-tax.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/benefit-amount.html"
+      ]
+    },
+    {
+      "id": "gen-oas-03",
+      "question": "Is there any benefit to starting OAS later than 65?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5991,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/when-start.html",
+      "top1_path": "When to start your retirement pension > How age affects your pension > What to consider when choosing to start your OAS at age 65",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/when-start.html"
+      ]
+    },
+    {
+      "id": "gen-oas-03",
+      "question": "Is there any benefit to starting OAS later than 65?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.5991,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/when-start.html",
+      "top1_path": "When to start your retirement pension > How age affects your pension > What to consider when choosing to start your OAS at age 65",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/when-start.html"
+      ]
+    },
+    {
+      "id": "gen-sin-01",
+      "question": "I lost my SIN card. How do I get a new card?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "sin",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6639,
+      "top1_url": "https://www.canada.ca/en/employment-social-development/services/sin/lost.html",
+      "top1_path": "Damaged, forgotten or lost Social Insurance Number > Find or get a copy of your SIN online > If you can't find your SIN or your child's SIN",
+      "expected_urls": [
+        "https://www.canada.ca/en/employment-social-development/services/sin/lost.html"
+      ]
+    },
+    {
+      "id": "gen-sin-01",
+      "question": "I lost my SIN card. How do I get a new card?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "sin",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6639,
+      "top1_url": "https://www.canada.ca/en/employment-social-development/services/sin/lost.html",
+      "top1_path": "Damaged, forgotten or lost Social Insurance Number > Find or get a copy of your SIN online > If you can't find your SIN or your child's SIN",
+      "expected_urls": [
+        "https://www.canada.ca/en/employment-social-development/services/sin/lost.html"
+      ]
+    },
+    {
+      "id": "gen-pp-01",
+      "question": "If I apply at a passport office in person, how many business days until it's ready?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.67,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html",
+      "top1_path": "Check our service standards : Canadian passports and other travel documents",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html"
+      ]
+    },
+    {
+      "id": "gen-pp-01",
+      "question": "If I apply at a passport office in person, how many business days until it's ready?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.67,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html",
+      "top1_path": "Check our service standards : Canadian passports and other travel documents",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/processing-times.html"
+      ]
+    },
+    {
+      "id": "gen-pp-02",
+      "question": "Where do I send my daughter's passport application if I'm mailing it from Ontario?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6657,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html",
+      "top1_path": "How to apply for a child passport in Canada > How to apply for a child passport: Get it in 10 to 20 business days or more (Apply by mail) > 4. Submit your application and pay your fees",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html"
+      ]
+    },
+    {
+      "id": "gen-pp-02",
+      "question": "Where do I send my daughter's passport application if I'm mailing it from Ontario?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.6657,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html",
+      "top1_path": "How to apply for a child passport in Canada > How to apply for a child passport: Get it in 10 to 20 business days or more (Apply by mail) > 4. Submit your application and pay your fees",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html"
+      ]
+    },
+    {
+      "id": "gen-pp-03",
+      "question": "My son needs a passport this weekend for an emergency trip. What do I do?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.6673,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/urgent-emergency-passport.html",
+      "top1_path": "Get urgent, express or emergency weekend passport services",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html"
+      ]
+    },
+    {
+      "id": "gen-pp-03",
+      "question": "My son needs a passport this weekend for an emergency trip. What do I do?",
+      "category": "known_issue",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.6673,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/urgent-emergency-passport.html",
+      "top1_path": "Get urgent, express or emergency weekend passport services",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html"
+      ]
+    },
+    {
+      "id": "gen-pp-04",
+      "question": "My passport got stolen while I'm travelling in Mexico. What should I do?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 5,
+      "answer_hit": true,
+      "top1_score": 0.5986,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/police-information.html",
+      "top1_path": "Information for law enforcement: What to do with a lost, stolen or found Canadian travel document > What to do with a lost, stolen or found Canadian travel document > Stolen travel documents in Canada",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/lost-stolen-inaccessible-damaged-found.html"
+      ]
+    },
+    {
+      "id": "gen-pp-04",
+      "question": "My passport got stolen while I'm travelling in Mexico. What should I do?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 5,
+      "answer_hit": true,
+      "top1_score": 0.5986,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/police-information.html",
+      "top1_path": "Information for law enforcement: What to do with a lost, stolen or found Canadian travel document > What to do with a lost, stolen or found Canadian travel document > Stolen travel documents in Canada",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/lost-stolen-inaccessible-damaged-found.html"
+      ]
+    },
+    {
+      "id": "gen-pp-05",
+      "question": "Do I need someone to vouch for me when I renew my passport?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": null,
+      "answer_hit": false,
+      "top1_score": 0.5492,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/help-centre/apply.html",
+      "top1_path": "Applying for a passport > Submitting your application",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport.html"
+      ]
+    },
+    {
+      "id": "gen-pp-05",
+      "question": "Do I need someone to vouch for me when I renew my passport?",
+      "category": "colloquial",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": null,
+      "answer_hit": false,
+      "top1_score": 0.5492,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/help-centre/apply.html",
+      "top1_path": "Applying for a passport > Submitting your application",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/renew-adult-passport.html"
+      ]
+    },
+    {
+      "id": "gen-pp-06",
+      "question": "What size do passport pictures have to be?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.7001,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html",
+      "top1_path": "Passport photo requirements > On this page > Photo specifications",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html"
+      ]
+    },
+    {
+      "id": "gen-pp-06",
+      "question": "What size do passport pictures have to be?",
+      "category": "direct",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.7001,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html",
+      "top1_path": "Passport photo requirements > On this page > Photo specifications",
+      "expected_urls": [
+        "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/photos.html"
+      ]
+    },
+    {
+      "id": "gen-amb-01",
+      "question": "When will the money start coming in after I apply?",
+      "category": "ambiguous",
+      "source": "generated",
+      "program_group": "cpp+ei+oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": null,
+      "answer_hit": false,
+      "top1_score": 0.525,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/guaranteed-income-supplement/allowance/after-apply.html",
+      "top1_path": "After you apply > Application processing times > What your letter could include",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html"
+      ]
+    },
+    {
+      "id": "gen-amb-01",
+      "question": "When will the money start coming in after I apply?",
+      "category": "ambiguous",
+      "source": "generated",
+      "program_group": "cpp+ei+oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": null,
+      "answer_hit": false,
+      "top1_score": 0.525,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/guaranteed-income-supplement/allowance/after-apply.html",
+      "top1_path": "After you apply > Application processing times > What your letter could include",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/after-applying.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/while-receiving.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-survivor-pension.html"
+      ]
+    },
+    {
+      "id": "gen-amb-02",
+      "question": "How much will I get every month?",
+      "category": "ambiguous",
+      "source": "generated",
+      "program_group": "cpp+oas",
+      "mode": "unfiltered",
+      "answerable": true,
+      "rank": 2,
+      "answer_hit": true,
+      "top1_score": 0.4607,
+      "top1_url": "https://www.canada.ca/en/services/benefits/ei/various-types-earnings.html",
+      "top1_path": "Employment Insurance and the various types of earnings > Pensions > Pension paid on a periodic basis",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/payments.html"
+      ]
+    },
+    {
+      "id": "gen-amb-02",
+      "question": "How much will I get every month?",
+      "category": "ambiguous",
+      "source": "generated",
+      "program_group": "cpp+oas",
+      "mode": "oracle",
+      "answerable": true,
+      "rank": 1,
+      "answer_hit": true,
+      "top1_score": 0.4559,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+      "top1_path": "How much you could receive > How we calculate your CPP payment",
+      "expected_urls": [
+        "https://www.canada.ca/en/services/benefits/publicpensions/cpp/amount.html",
+        "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/payments.html"
+      ]
+    },
+    {
+      "id": "gen-ooc-01",
+      "question": "How do I file my income taxes online?",
+      "category": "out_of_corpus",
+      "source": "generated",
+      "program_group": "none",
+      "mode": "unfiltered",
+      "answerable": false,
+      "rank": null,
+      "answer_hit": null,
+      "top1_score": 0.5247,
+      "top1_url": "https://www.canada.ca/en/services/benefits/publicpensions/old-age-security/guaranteed-income-supplement/allowance/while-receiving.html",
+      "top1_path": "Receiving your benefit > Annual review of your Allowance > File taxes by the deadline to avoid payment delays",
+      "expected_urls": []
+    },
+    {
+      "id": "gen-ooc-02",
+      "question": "Do I need a visa to visit the United States?",
+      "category": "out_of_corpus",
+      "source": "generated",
+      "program_group": "none",
+      "mode": "unfiltered",
+      "answerable": false,
+      "rank": null,
+      "answer_hit": null,
+      "top1_score": 0.448,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/passport-tips.html",
+      "top1_path": "What to do after you get your passport and how to keep it safe > Before you travel > Register as a Canadian abroad",
+      "expected_urls": []
+    },
+    {
+      "id": "gen-gap-01",
+      "question": "How much does a passport cost?",
+      "category": "corpus_gap",
+      "source": "generated",
+      "program_group": "passport",
+      "mode": "unfiltered",
+      "answerable": false,
+      "rank": null,
+      "answer_hit": null,
+      "top1_score": 0.6091,
+      "top1_url": "https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/child-passport.html",
+      "top1_path": "How to apply for a child passport in Canada > How to apply for a child passport: Get it on a weekend or statutory holiday > 4. Call us and pay the fees (weekend or statutory holiday)",
+      "expected_urls": []
+    }
+  ]
+}

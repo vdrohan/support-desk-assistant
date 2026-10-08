@@ -101,12 +101,22 @@ def test_gives_up_after_max_retries(tmp_path):
         embedder(tmp_path, client, cfg=cfg).embed_documents(["x"])
 
 
-def test_query_uses_query_input_type_and_no_cache(tmp_path):
+def test_query_uses_query_input_type_and_cache(tmp_path):
     client = FakeVoyage()
     e = embedder(tmp_path, client)
-    e.embed_query("when is my payment")
-    e.embed_query("when is my payment")
-    assert [c["input_type"] for c in client.calls] == ["query", "query"]
+    first = e.embed_query("when is my payment")
+    assert e.embed_query("when is my payment") == pytest.approx(first)
+    assert [c["input_type"] for c in client.calls] == ["query"]  # second call from cache
+    e.embed_documents(["when is my payment"])  # same text as a document: separate key
+    assert [c["input_type"] for c in client.calls] == ["query", "document"]
+
+
+def test_query_without_cache_calls_api_each_time():
+    client = FakeVoyage()
+    e = Embedder(client, CFG)
+    e.embed_query("q")
+    e.embed_query("q")
+    assert len(client.calls) == 2
 
 
 def test_api_key_never_logged_or_repr(tmp_path, caplog):
