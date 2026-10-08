@@ -1,6 +1,6 @@
 # Retrieval eval: canada_docs_v1, k=5
 
-2026-10-08T00:05:35+00:00 · git 9d7ef80 (dirty) · retrieval_v1.jsonl (37 questions, sha256 75a0703054bb) · voyage-4 1024d
+2026-10-08T00:09:08+00:00 · git 06485c3 · retrieval_v1.jsonl (37 questions, sha256 75a0703054bb) · voyage-4 1024d
 
 n = answerable questions in the group (out_of_corpus and corpus_gap items have no hit metrics). Answer hit = a key fact in a top-k chunk from an expected page.
 
