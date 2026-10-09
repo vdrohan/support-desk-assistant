@@ -228,3 +228,6 @@ data/processed/
 .DS_Store
 data/chunks.jsonl
 data/cache/
+
+# request log (answer pipeline)
+logs/
