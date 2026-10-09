@@ -162,3 +162,11 @@ Found while labelling `retrieval_v1`. Each is a content problem, not a retrieval
 | **The adult passport document checklist sits behind a selector.** `new-adult-passport.html` is a "Where are you right now?" chooser, and the checklist lives on sub-pages the crawler never reached. | Document questions only partially answerable (`human-07`). | Add the chooser's target pages as extra seeds (or allow depth 3 for passport), within the same prefix and robots rules. |
 
 When a fix lands, re-crawl or re-extract and bump the collection version. The affected items stay in `retrieval_v1` (labels change only if the fix creates a genuine labelling error), so the before/after effect shows up in the same dataset version.
+
+## 14. CI: lint and tests on GitHub Actions; gitleaks stays in pre-commit only
+
+- **Decision:** `.github/workflows/ci.yml` runs `ruff check`, `ruff format --check` and `pytest` on push to `main` and on pull requests, after `uv sync --locked`. The tests need no network, API keys or Qdrant, so there are no skip markers. Actions are pinned to full commit SHAs, with the version in a comment. `.github/dependabot.yml` bumps `github-actions` only, monthly, so the pins don't go stale.
+- **Gitleaks is not in CI for now.** It runs in pre-commit, and the full history was scanned once when CI was added (7 commits, no findings).
+  - The pre-commit hook already scans every commit before it lands, so a CI job would mostly repeat it.
+  - It would add another third-party action to pin and track.
+  - Pre-commit can be skipped with `--no-verify`. If the repo gets collaborators or goes public, add a CI scan then.
