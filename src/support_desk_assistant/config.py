@@ -14,6 +14,7 @@ Changing the embedding model, dimension or chunking changes the vectors: bump
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -93,6 +94,66 @@ class EvalSettings(BaseModel):
     k: int = 5
 
 
+class ModelProfile(BaseModel):
+    """Per-model request settings and prices (docs/decisions.md #16).
+
+    ``thinking="disabled"`` is rejected by Sonnet 5.5, so its profile uses ``adaptive``.
+    Haiku 5.5 and Sonnet 5.5 reject non-default ``temperature``/``top_p``/``top_k``,
+    so none are sent. Thinking tokens are billed as (and counted in) output tokens.
+    """
+
+    max_tokens: int
+    thinking: Literal["disabled", "adaptive"]
+    effort: Literal["low", "medium", "high", "xhigh", "max"]
+    input_usd_per_mtok: float
+    output_usd_per_mtok: float
+
+
+class AnswerSettings(BaseModel):
+    """Answer generation (docs/decisions.md #15-#18)."""
+
+    model: str = "claude-haiku-5-5"
+    # One-time comparison run only; not like-for-like with ``model`` (it thinks).
+    comparison_model: str = "claude-sonnet-5-5"
+    models: dict[str, ModelProfile] = {
+        "claude-haiku-5-5": ModelProfile(
+            max_tokens=500,
+            thinking="disabled",
+            effort="low",
+            input_usd_per_mtok=0.10,  # prompts <= 100K tokens; $0.50/$2.50 beyond
+            output_usd_per_mtok=0.50,
+        ),
+        "claude-sonnet-5-5": ModelProfile(
+            max_tokens=4000,  # headroom so thinking can't truncate the JSON
+            thinking="adaptive",
+            effort="low",
+            input_usd_per_mtok=2.00,
+            output_usd_per_mtok=10.00,
+        ),
+    }
+    # Multipliers on the input price (Anthropic prompt caching).
+    cache_read_multiplier: float = 0.1
+    cache_write_multiplier: float = 1.25
+    prices_as_of: str = "2026-10-06"
+    usd_cad: float = 1.38  # placeholder rate; update before trusting CAD figures
+    # Gate: the top retrieval score below this abstains without calling Claude.
+    # Placeholder; tune with the eval (score_analysis in the retrieval eval).
+    min_score: float = 0.30
+    # Anthropic prompt caching (cache_control on the system prompt). Off by default:
+    # sporadic CLI use pays the write premium with no reads. Turn on for eval runs.
+    prompt_caching: bool = False
+    system_prompt_path: Path = Path("prompts/answer_system.md")
+    # Bump when AnswerResult or the prompt layout changes (part of the response-cache key).
+    schema_version: int = 1
+    max_retries: int = 2
+    timeout_s: float = 60.0
+    smoke_questions: list[str] = [
+        "Can I get EI if I quit my job?",
+        "How big is the cut if I take CPP at 60?",
+        "How do I apply for Ontario Works?",
+    ]
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_prefix="SDA_", env_nested_delimiter="__", env_file=".env", extra="ignore"
@@ -102,6 +163,10 @@ class Settings(BaseSettings):
     voyage_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("VOYAGE_API_KEY", "voyage_api_key")
     )
+    anthropic_api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY", "anthropic_api_key")
+    )
+    logs_dir: Path = Path("logs")
     qdrant_url: str = Field(
         default="http://localhost:6333", validation_alias=AliasChoices("QDRANT_URL", "qdrant_url")
     )
@@ -111,6 +176,7 @@ class Settings(BaseSettings):
     index: IndexSettings = IndexSettings()
     retrieval: RetrievalSettings = RetrievalSettings()
     eval: EvalSettings = EvalSettings()
+    answer: AnswerSettings = AnswerSettings()
 
     @property
     def raw_dir(self) -> Path:
@@ -135,6 +201,14 @@ class Settings(BaseSettings):
     @property
     def eval_results_dir(self) -> Path:
         return self.eval_dir / "results"
+
+    @property
+    def request_log_path(self) -> Path:
+        return self.logs_dir / "requests.jsonl"
+
+    @property
+    def answer_cache_dir(self) -> Path:
+        return self.data_dir / "cache" / "answers"
 
     @property
     def embedding_cache_path(self) -> Path:

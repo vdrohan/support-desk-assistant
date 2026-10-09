@@ -8,6 +8,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "vdrohan" }]
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "anthropic>=1.12.1",
     "beautifulsoup4>=4.15.0",
     "httpx>=0.28.1",
     "lxml>=6.1.3",
@@ -19,6 +20,7 @@ dependencies = [
 ]
 
 [project.scripts]
+sda = "support_desk_assistant.answer.cli:main"
 sda-ingest = "support_desk_assistant.ingest.__main__:main"
 sda-search = "support_desk_assistant.retrieve:main"
 sda-eval-retrieval = "support_desk_assistant.evals.retrieval:main"
