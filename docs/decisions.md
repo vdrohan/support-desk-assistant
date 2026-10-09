@@ -170,3 +170,33 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - The pre-commit hook already scans every commit before it lands, so a CI job would mostly repeat it.
   - It would add another third-party action to pin and track.
   - Pre-commit can be skipped with `--no-verify`. If the repo gets collaborators or goes public, add a CI scan then.
+
+## 15. Answer step: native structured output, validated twice
+
+- **Decision:** `client.messages.create(..., output_config={"format": {"type": "json_schema", ...}})`, with the schema derived from the pydantic `AnswerResult` (`answer`, `citations` as chunk IDs, `abstained`, `abstain_reason`). The response is parsed with the same model, then `validate_answer` checks the rules a schema can't express (every citation was retrieved, non-abstained answers cite, abstentions are empty).
+- **Why native output:** the API constrains decoding to the schema, so there are no JSON parse failures to retry (each retry costs tokens).
+  - Forced tool calls (`tool_choice` of `any`/`tool`) are not an option on Sonnet 5.5, and the comparison run needs the same code on both models.
+  - The Anthropic `citations` feature is incompatible with `output_config.format`. It isn't needed: our citations are our own chunk IDs.
+- **Sampling parameters:** none are sent. Haiku 5.5 and Sonnet 5.5 reject non-default `temperature`/`top_p`/`top_k` (400), so "low temperature" isn't available. Stability comes from the schema, the prompt and the response cache.
+- **Incomplete generations** (`refusal`, `max_tokens`, output that fails the schema) become an abstention that says why. The log line has the `status`.
+- **Chunk IDs:** `chunk_id` is `uuid5(url | heading path | ordinal)`, deterministic across reindexes for unchanged page structure. A section inserted before others on the same heading path shifts their ordinals, and the content under an ID can change. That is why the response-cache key hashes the rendered prompt (chunk text included), not just the IDs.
+
+## 16. Haiku 5.5 as the answer model, Sonnet 5.5 as a one-time comparison
+
+- **Decision:** `claude-haiku-5-5` ($0.10 / $0.50 per MTok, prompts up to 100K tokens) generates answers; `claude-sonnet-5-5` ($2 / $10) stays in config for a one-off comparison run (`sda ask --model`). Prices and the USD/CAD rate are in `AnswerSettings` (`prices_as_of`); the CAD rate is a placeholder.
+- **Haiku runs with thinking disabled and effort `low`.** Thinking is on by default on 5.5 models and counts against `max_tokens` (500), so it could truncate the JSON.
+- **The comparison is not like-for-like.** Sonnet 5.5 rejects `thinking: disabled`, so its profile runs adaptive thinking (effort `low`) with `max_tokens` 4000 so thinking can't truncate the JSON. Differences in quality or cost mix model size with thinking. Treat the run as indicative only.
+- **Defaults:** top-k 5 and `max_tokens` 500 are in config.
+
+## 17. Two-layer abstention
+
+- **Layer 1, the gate:** if the top retrieval score is below `AnswerSettings.min_score`, abstain without calling Claude. It costs nothing and cannot hallucinate. `min_score` is a placeholder (0.30); tune it against the eval's out-of-corpus and answerable top-1 score distributions (`score_analysis`).
+- **Layer 2, the model:** the system prompt tells Claude to set `abstained` when the retrieved chunks don't answer the question. This catches questions that retrieve something plausible but irrelevant, which no score threshold reliably separates.
+- **Why both:** the gate alone misses on-topic-but-unanswered questions; the model alone spends tokens on obvious misses. `validate_answer` enforces that an abstention is empty and uncited.
+
+## 18. Response cache and prompt caching
+
+- **Response cache** (`data/cache/answers/`, gitignored): every completed API response is stored raw, including refusals and `max_tokens` stops. HTTP and network errors are never cached. The response is re-parsed and re-validated on every read, so changing `validate_answer` needs no re-spend. A hit makes no API call and logs cost 0.
+- **Key:** sha256 of model, system prompt text, the rendered user message (question plus each chunk's ID, text and dates, in rank order), `max_tokens`, effort, thinking mode and the schema version. This is stricter than question + system prompt + model + chunk IDs: edited chunk text or a recrawl (new `crawled_at`) misses. Bump `AnswerSettings.schema_version` when `AnswerResult` or the prompt layout changes.
+- **Anthropic prompt caching** (`cache_control` on the system prompt) is a separate, config flag `prompt_caching`, **off by default**: sporadic CLI use would pay the 1.25x write premium with no reads. Turn it on for eval runs (`SDA_ANSWER__PROMPT_CACHING=true`). Prompts under the model's minimum cacheable length won't cache either way. The log records cache read/write tokens separately from the local `cache_hit`.
+- **Crawl dates:** the prompt gets `crawled_at` and `date_modified` from `data/manifest.jsonl`, joined by URL at answer time. A URL missing from the manifest gets `null`. This avoids a reindex.

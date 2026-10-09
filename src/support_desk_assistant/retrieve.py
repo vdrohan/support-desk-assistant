@@ -22,6 +22,8 @@ class Hit:
     heading_path: list[str]
     url: str
     text: str
+    # Qdrant point ID: uuid5(url | heading path | ordinal), stable across reindexes.
+    chunk_id: str = ""
 
 
 def search(
@@ -53,6 +55,7 @@ def search(
             heading_path=point.payload["heading_path"],
             url=point.payload["url"],
             text=point.payload["text"],
+            chunk_id=str(point.id),
         )
         for point in response.points
     ]
