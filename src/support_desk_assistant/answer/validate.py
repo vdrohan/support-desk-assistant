@@ -22,15 +22,19 @@ class ValidationResult:
 
 
 def validate_answer(result: AnswerResult, retrieved_ids: Collection[str]) -> ValidationResult:
-    """Check ``result`` against the rules and report every one that fails (not just the first).
+    failed: list[str] = []
+    allowed = set(retrieved_ids)
 
-    Rules:
-    - ``citation_not_retrieved``: every cited ID is in ``retrieved_ids``.
-    - ``no_citations``: a non-abstained answer has at least one citation.
-    - ``abstained_with_answer``: an abstained result has an empty ``answer``.
-    - ``abstained_with_citations``: an abstained result has no citations.
+    if any(c not in allowed for c in result.citations):
+        failed.append(CITATION_NOT_RETRIEVED)
 
-    Returns a ``ValidationResult`` whose ``failed_rules`` lists the names above (empty when
-    everything passes); ``ok`` is True only when nothing failed.
-    """
-    raise NotImplementedError
+    if result.abstained:
+        if result.answer.strip():
+            failed.append(ABSTAINED_WITH_ANSWER)
+        if result.citations:
+            failed.append(ABSTAINED_WITH_CITATIONS)
+    else:
+        if not result.citations:
+            failed.append(NO_CITATIONS)
+
+    return ValidationResult(failed_rules=tuple(failed))
