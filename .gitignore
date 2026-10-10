@@ -231,3 +231,4 @@ data/cache/
 
 # request log (answer pipeline)
 logs/
+.vscode/
