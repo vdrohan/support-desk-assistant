@@ -85,3 +85,36 @@ class FakeAnthropic:
         if isinstance(response, Exception):
             raise response
         return response
+
+
+# --- Corpus ------------------------------------------------------------------------
+
+
+def write_corpus(data_dir, pages):
+    """Write ``pages`` (program, url, title, body, date_modified) as a manifest plus
+    processed Markdown files, the way the crawler lays them out."""
+    import json
+
+    from support_desk_assistant.ingest.crawl import slug_for
+
+    rows = []
+    for program, url, title, body, date_modified in pages:
+        folder = data_dir / "processed" / program
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / f"{slug_for(url)}.md").write_text(
+            f"Source: {url}\nDate modified: {date_modified}\n\n# {title}\n\n{body}\n",
+            encoding="utf-8",
+        )
+        rows.append(
+            {
+                "url": url,
+                "title": title,
+                "program": program,
+                "date_modified": date_modified,
+                "crawled_at": "2026-10-06T00:00:00Z",
+                "content_hash": "sha256:x",
+            }
+        )
+    (data_dir / "manifest.jsonl").write_text(
+        "".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8"
+    )
