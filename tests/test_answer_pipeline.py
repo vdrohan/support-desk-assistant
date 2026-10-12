@@ -185,7 +185,9 @@ def test_todo_only_system_prompt_blocks_the_call(settings):
 def test_happy_path_result_cost_and_log(settings):
     out = run(settings, FakeAnthropic(make_message(GOOD, input_tokens=1000, output_tokens=100)))
     assert out.result.citations == ["id-1"] and out.status == "ok" and out.api_called
-    assert out.cost_usd == pytest.approx(0.00015) and out.cost_cad == pytest.approx(0.00015 * 1.38)
+    assert out.cost_usd == pytest.approx(0.00015) and out.cost_cad == pytest.approx(
+        0.00015 * settings.answer.usd_cad
+    )
     (line,) = log_lines(settings)
     assert line["question"] == "Hours for EI?" and line["model"] == "claude-haiku-5-5"
     assert line["retrieved"] == [
