@@ -93,6 +93,37 @@ class EvalSettings(BaseModel):
     retrieval_dataset: str = "retrieval_v1.jsonl"
     k: int = 5
 
+    # Answer-level eval set (docs/decisions.md #19). ``candidates`` is drafted by Haiku,
+    # reviewed by hand, and accepted items land in the versioned ``eval_set``.
+    candidates_file: str = "candidates.jsonl"
+    eval_set_file: str = "eval_set_v1.jsonl"
+    review_state_file: str = "review_state.json"
+    review_html_file: str = "review.html"
+    # Must be a key of ``AnswerSettings.models`` (prices and request profile come from there).
+    draft_model: str = "claude-haiku-5-5"
+    draft_max_tokens: int = 1500
+    draft_prompt_path: Path = Path("prompts/eval_draft.md")
+    # Candidates per category: 40 in all, so the human cut still leaves a set worth
+    # having. Keys are the category names in ``evals/draft_questions.py``.
+    draft_mix: dict[str, int] = {
+        "single_page": 18,
+        "multi_page": 7,
+        "confusable": 6,
+        "unanswerable_out_of_scope": 3,
+        "unanswerable_in_domain": 4,
+        "time_sensitive": 2,
+    }
+    draft_seed: int = 20261012
+    # Pages outside this length are never sampled: too thin to ask about, or too long to
+    # send whole (child-passport.html alone is ~40k words).
+    draft_min_page_words: int = 150
+    draft_max_page_words: int = 3000
+    # Word-set Jaccard at or above this flags two questions as near-duplicates.
+    duplicate_jaccard: float = 0.7
+    # Lines of context (blank-line blocks) the review helper shows around a key fact.
+    review_context_blocks: int = 1
+    review_excerpt_chars: int = 1800
+
 
 class ModelProfile(BaseModel):
     """Per-model request settings and prices (docs/decisions.md #16).
@@ -135,7 +166,7 @@ class AnswerSettings(BaseModel):
     cache_read_multiplier: float = 0.1
     cache_write_multiplier: float = 1.25
     prices_as_of: str = "2026-10-06"
-    usd_cad: float = 1.38  # placeholder rate; update before trusting CAD figures
+    usd_cad: float = 1.42  # USD->CAD, early Oct 2026 (supplied by the project owner)
     # Gate: the top retrieval score below this abstains without calling Claude.
     # Placeholder; tune with the eval (score_analysis in the retrieval eval).
     min_score: float = 0.30
@@ -201,6 +232,26 @@ class Settings(BaseSettings):
     @property
     def eval_results_dir(self) -> Path:
         return self.eval_dir / "results"
+
+    @property
+    def candidates_path(self) -> Path:
+        return self.eval_dir / self.eval.candidates_file
+
+    @property
+    def eval_set_path(self) -> Path:
+        return self.eval_dir / self.eval.eval_set_file
+
+    @property
+    def review_state_path(self) -> Path:
+        return self.eval_dir / self.eval.review_state_file
+
+    @property
+    def review_html_path(self) -> Path:
+        return self.eval_dir / self.eval.review_html_file
+
+    @property
+    def eval_cache_dir(self) -> Path:
+        return self.data_dir / "cache" / "evals"
 
     @property
     def request_log_path(self) -> Path:

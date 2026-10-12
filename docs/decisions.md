@@ -200,3 +200,18 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
 - **Key:** sha256 of model, system prompt text, the rendered user message (question plus each chunk's ID, text and dates, in rank order), `max_tokens`, effort, thinking mode and the schema version. This is stricter than question + system prompt + model + chunk IDs: edited chunk text or a recrawl (new `crawled_at`) misses. Bump `AnswerSettings.schema_version` when `AnswerResult` or the prompt layout changes.
 - **Anthropic prompt caching** (`cache_control` on the system prompt) is a separate, config flag `prompt_caching`, **off by default**: sporadic CLI use would pay the 1.25x write premium with no reads. Turn it on for eval runs (`SDA_ANSWER__PROMPT_CACHING=true`). Prompts under the model's minimum cacheable length won't cache either way. The log records cache read/write tokens separately from the local `cache_hit`.
 - **Crawl dates:** the prompt gets `crawled_at` and `date_modified` from `data/manifest.jsonl`, joined by URL at answer time. A URL missing from the manifest gets `null`. This avoids a reindex.
+
+## 19. Answer eval set: drafted by Haiku, accepted by hand, reviewable from a phone
+
+- **Decision:** `sda-eval-draft` has Haiku write about 40 candidate questions (`data/eval/candidates.jsonl`, gitignored) across six categories (`EvalSettings.draft_mix`). A person accepts, edits or rejects each one; accepted items are appended to `data/eval/eval_set_v1.jsonl` under a final `ev-NNN` id. The drafter never decides what is true.
+- **Grounding check:** every key fact must appear verbatim on a gold page (`check_candidate`). A failing candidate is flagged, not dropped, and **cannot be accepted** until it is edited.
+- **Review is offline.** No API calls: the reviewer sees the key facts highlighted in the page text, and for unanswerable items the best keyword matches elsewhere in the corpus.
+- **Two ways to review, one set of rules:**
+  - *Terminal:* `sda-eval-review`.
+  - *Phone:* `sda-eval-review --export` writes one self-contained HTML file (`data/eval/review.html`, gitignored, no external assets). Accept/Reject state is kept in `localStorage`, and "Copy decisions" yields `<candidate id> a|r` lines. `sda-eval-review --apply decisions.txt` replays them through the same `accept`/`reject` functions, so the same grounding check applies.
+- **`--apply` is idempotent:**
+  - A decision already in `review_state.json` is never changed (a conflicting line is reported, not applied).
+  - An accept whose question is already in the eval set is recorded against that item instead of being appended again, so a lost state file or an interrupted run can't duplicate it.
+  - A bad line or an unknown id is reported and the rest still apply; the exit code is 1 if anything was reported.
+- **Stale phone decisions:** each card carries a fingerprint of its question, key facts and gold URLs. A decision stored in the browser for an older version of the same id is ignored.
+- **Not done:** `--apply` lines carry no fingerprint, so a decisions file written against an older draft of the same ids would be applied to the new draft. Don't run `sda-eval-draft --force` between exporting and applying.
