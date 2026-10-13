@@ -215,3 +215,37 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - A bad line or an unknown id is reported and the rest still apply; the exit code is 1 if anything was reported.
 - **Stale phone decisions:** each card carries a fingerprint of its question, key facts and gold URLs. A decision stored in the browser for an older version of the same id is ignored.
 - **Not done:** `--apply` lines carry no fingerprint, so a decisions file written against an older draft of the same ids would be applied to the new draft. Don't run `sda-eval-draft --force` between exporting and applying.
+
+## 20. Answer eval set v1: 58 accepted questions, per-category reporting, frozen after first results, hybrid scoring
+
+- **Decision:** `data/eval/eval_set_v1.jsonl` holds 58 accepted questions, ids `ev-001` to `ev-058`, produced by the process in [decision 19](#19-answer-eval-set-drafted-by-haiku-accepted-by-hand-reviewable-from-a-phone).
+- **Review outcome:**
+  - The first candidate file had 46 items. During review 20 more were added and 6 reworked, so 66 were reviewed: 58 accepted, 8 rejected, 0 pending. Review ran offline in two rounds of `sda-eval-review --apply`.
+  - *Rework:* junk key facts (bare table cells like "20", labels like "Benefit name", fragments like "either", stray `**`) were replaced with verbatim, concrete facts.
+  - *Added:* 7 of the maintainer's raw questions with typos kept (the same 7 appear in both `retrieval_v1.jsonl` and the answer set because both came from `data/eval/human_questions.txt`, which lets a failed answer be traced to retrieval or generation), 4 new EI questions, 3 out-of-scope questions, 1 in-domain abstention question, and 5 replacements (below).
+  - *Rejected:* `single_page-05` and `multi_page-04` (near-duplicates of other questions' key figures); `multi_page-02`, `-03`, `-07` (one page was enough; replaced by `single_page-19`, `-20`, `-21`); `multi_page-01` (assumed a rule for minors' ID that the pages don't state); `unanswerable_in_domain-01` and `-04` (the corpus answers them: EI "may lose benefits" after 4 weeks, and the SIN page says you need not give your SIN to rent; both became answerable `single_page` questions).
+- **Final mix** (accepted vs `EvalSettings.draft_mix`):
+
+  | Category | Accepted | Draft target |
+  |---|---|---|
+  | `single_page` | 32 | 18 |
+  | `multi_page` | 8 | 7 |
+  | `confusable` | 6 | 6 |
+  | `unanswerable_out_of_scope` | 6 | 3 |
+  | `unanswerable_in_domain` | 3 | 4 |
+  | `time_sensitive` | 3 | 2 |
+  | **Total** | **58** | **40** |
+
+- **Why more than 40:** 40 was the drafter's target, not a goal for the set. The first file already had 46 items, and review added 20 more to fill gaps it found: raw citizen wording, EI coverage, out-of-scope abstention, and replacements for rejected `multi_page` items and reclassified in-domain items.
+- **Report per category, never as one number:** `single_page` is 55% of the set (32/58), so a single headline score would be dominated by the easiest category. Four of six categories have 3 to 8 items, so every result carries *n*.
+- **Freeze rule** (as in decision 12): once results are published, `eval_set_v1.jsonl` is immutable. Fix only genuine labelling errors, explained in the item's `notes`; anything else goes into `eval_set_v2.jsonl`. Any change to retrieval or generation is judged by comparing result files on the same dataset version.
+- **Left out on purpose:**
+  - "How long does a passport take?": the only answer is a bare table cell ("10"/"20") with no quotable sentence (decision 13, processing-times table).
+  - "What documents do I need to apply for a passport?": the obvious gold page contains an "Error loading fee" placeholder (decision 13).
+  - "When do I get paid?": ambiguous across programs. The right behaviour is to ask which benefit, so it is parked for the triage phase.
+- **Scoring approach (design only, runner not built yet):** hybrid.
+  - Key facts that are numbers or codes (e.g. "$1,507.65", "PPTC 203") are matched by normalized substring, reusing the retrieval eval's normalization (decision 12).
+  - Sentence-style key facts are judged by a Haiku rubric, with the key facts as the rubric.
+  - The citation validator (`validate_answer`, decision 15) and the abstention check (decision 17) stay deterministic and free.
+  - Results are reported per category.
+- **Not done:** the scoring runner is not built, no judge calls have been made, and no answer scores exist yet. The three questions above are not in v1. LLM-only judging of every fact was not chosen: it costs tokens on every run and isn't deterministic (same reasoning as decision 12).
