@@ -11,9 +11,11 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
   - `ingest/`: `crawl.py` → `chunk.py` → `embed.py` → `index.py` (Qdrant sync); `__main__.py` is `sda-ingest`
   - `retrieve.py`: `search()` and the `sda-search` CLI
   - `evals/`: eval harness (named `evals`, not `eval`, so it doesn't shadow the builtin); `retrieval.py` is `sda-eval-retrieval`
+    - `draft_questions.py`: `sda-eval-draft`, Haiku drafts candidate questions
+    - `review.py`: `sda-eval-review`, offline accept/reject; `--export` writes a phone HTML page, `--apply` records its decisions
 - `tests/`: pytest; fixtures in `tests/fixtures/`. No live network in tests: use `httpx.MockTransport`, `tests/fakes.py` (fake Voyage) and `QdrantClient(":memory:")`
 - `data/manifest.jsonl`: committed corpus definition. Gitignored: `data/raw/`, `data/processed/`, `data/chunks.jsonl`, `data/cache/` (embedding cache)
-- `data/eval/`: versioned eval datasets (`retrieval_v1.jsonl`) and `results/` (committed)
+- `data/eval/`: versioned eval datasets (`retrieval_v1.jsonl`, `eval_set_v1.jsonl` = accepted answer eval set) and `results/` (committed). Gitignored: `candidates.jsonl`, `review_state.json`, `review.html`
 - `compose.yaml`: Qdrant (and later the API)
 
 ## Commands
@@ -27,6 +29,8 @@ uv run python -m support_desk_assistant.ingest.crawl [--program ei] [--refresh]
 uv run sda-ingest [--program ei] [--dry-run]   # chunk -> embed -> index (needs the Qdrant tunnel)
 uv run sda-search "question" [--program ei] [-k 5]
 uv run sda-eval-retrieval [--validate] [--collection X] [-k 5]
+uv run sda-eval-draft [--dry-run] [--yes] [--force] [--seed N] [--out FILE]   # Claude API, costs money (mock in tests)
+uv run sda-eval-review [--status | --export | --apply FILE] [--category C]   # offline
 uv run pre-commit run --all-files
 uv add <pkg> / uv add --dev <pkg>
 docker compose up -d qdrant      # on the deploy host
