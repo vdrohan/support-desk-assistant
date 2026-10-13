@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 in progress.** Crawl, chunk, embed, index and vector search work. Answer generation, the API and evals don't exist yet. See [Roadmap](#roadmap).
+> **Status: Phase 1 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The HTTP API and answer scoring don't exist yet. See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -50,11 +50,11 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
-| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, then `/ask` endpoint with citations, small eval set in `data/eval/`, `sda-evals` | 🚧 in progress |
+| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, then `/ask` endpoint, answer scoring | 🚧 in progress |
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
-Eval results will be published here once Phase 1 has a baseline. None exist yet.
+A retrieval baseline is in [`data/eval/results/`](data/eval/results/). Answer eval results don't exist yet.
 
 ## Corpus
 
