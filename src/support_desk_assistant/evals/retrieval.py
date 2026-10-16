@@ -361,7 +361,7 @@ def misses(results: Sequence[ItemResult], k: int) -> list[dict]:
 # --- Report ----------------------------------------------------------------------
 
 
-def _git(*args: str) -> str:
+def git_output(*args: str) -> str:
     try:
         return subprocess.run(
             ["git", *args], capture_output=True, text=True, check=True
@@ -382,8 +382,8 @@ def build_report(
     return {
         "meta": {
             "created_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
-            "git_sha": _git("rev-parse", "--short", "HEAD"),
-            "git_dirty": bool(_git("status", "--porcelain")),
+            "git_sha": git_output("rev-parse", "--short", "HEAD"),
+            "git_dirty": bool(git_output("status", "--porcelain")),
             "collection": collection,
             "k": k,
             "dataset": dataset_path.name,
