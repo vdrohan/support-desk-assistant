@@ -13,9 +13,14 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
   - `evals/`: eval harness (named `evals`, not `eval`, so it doesn't shadow the builtin); `retrieval.py` is `sda-eval-retrieval`
     - `draft_questions.py`: `sda-eval-draft`, Haiku drafts candidate questions
     - `review.py`: `sda-eval-review`, offline accept/reject; `--export` writes a phone HTML page, `--apply` records its decisions
+    - `answers.py`: `sda-eval-answers`, scores generated answers (number check + Haiku judge), per-category report
+    - `stats.py`: Wilson interval, confusion counts, Cohen's kappa
+    - `breakdown.py`: overall, by program, abstention, citation and failure-attribution rows
+    - `provenance.py`: reproducibility block recorded with every answer-eval run
+    - `calibrate.py`: blind-sheet label import and judge vs human agreement
 - `tests/`: pytest; fixtures in `tests/fixtures/`. No live network in tests: use `httpx.MockTransport`, `tests/fakes.py` (fake Voyage) and `QdrantClient(":memory:")`
 - `data/manifest.jsonl`: committed corpus definition. Gitignored: `data/raw/`, `data/processed/`, `data/chunks.jsonl`, `data/cache/` (embedding cache)
-- `data/eval/`: versioned eval datasets (`retrieval_v1.jsonl`, `eval_set_v1.jsonl` = accepted answer eval set) and `results/` (committed). Gitignored: `candidates.jsonl`, `review_state.json`, `review.html`
+- `data/eval/`: versioned eval datasets (`retrieval_v1.jsonl`, `eval_set_v1.jsonl` = accepted answer eval set, `judge_calibration.jsonl` = human labels for the judge) and `results/` (committed). Gitignored: `candidates.jsonl`, `review_state.json`, `review.html`, `judge_review.md`, `runs/`
 - `compose.yaml`: Qdrant (and later the API)
 
 ## Commands
@@ -31,6 +36,8 @@ uv run sda-search "question" [--program ei] [-k 5]
 uv run sda-eval-retrieval [--validate] [--collection X] [-k 5]
 uv run sda-eval-draft [--dry-run] [--yes] [--force] [--seed N] [--out FILE]   # Claude API, costs money (mock in tests)
 uv run sda-eval-review [--status | --export | --apply FILE] [--category C]   # offline
+uv run sda-eval-answers [--yes] [--limit N] [--category C] [--cap CAD] [--allow-dirty]   # dry run by default; --yes calls Claude (costs money; spend cap in config); needs Qdrant tunnel + Voyage even for the dry run
+uv run sda-eval-answers --export [RESULTS] [--reveal] | --import-labels SHEET [--from RESULTS] | --calibrate [FILE]   # blind review sheet and label import offline; --calibrate calls the judge without --yes (costs money unless cached)
 uv run pre-commit run --all-files
 uv add <pkg> / uv add --dev <pkg>
 docker compose up -d qdrant      # on the deploy host
