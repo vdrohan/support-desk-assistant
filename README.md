@@ -136,7 +136,8 @@ uv run sda-eval-answers --limit 2 --yes   # first 2 items per category, written 
 uv run sda-eval-answers --yes             # full run from a clean tree: data/eval/results/
 uv run sda-eval-answers --export          # offline blind hand-review sheet (--reveal shows the verdicts)
 uv run sda-eval-answers --import-labels data/eval/judge_review.md   # filled sheet -> judge_calibration.jsonl
-uv run sda-eval-answers --calibrate       # judge vs human agreement; calls Claude unless cached
+uv run sda-eval-answers --calibrate       # judge vs human agreement; cached verdicts are free, an uncached call is a dry run
+uv run sda-eval-answers --calibrate --yes # make the uncached judge calls (costs money, capped by --cap)
 ```
 
 Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and retrieves every question). Runs with `--yes` call Claude and cost money; `EvalSettings.spend_cap_cad` (override with `--cap`) is checked before the run and before each item. Each run writes `answers_<collection>_<model>_<run_id>.{jsonl,summary.json,md}`. Partial runs, and full runs from a dirty working tree, go to the gitignored `data/eval/runs/`; `--allow-dirty` writes the latter to `results/`. Scoring rules: [decisions #21](docs/decisions.md#21-answer-scoring-number-gate-plus-judge-per-category-report-capped-dry-run-first-runner); breakdowns, provenance and calibration: [decisions #23](docs/decisions.md#23-answer-eval-runner-overall-rows-abstention-and-citation-metrics-provenance-hard-cap-blind-judge-calibration).

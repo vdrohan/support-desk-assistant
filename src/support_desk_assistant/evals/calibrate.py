@@ -22,9 +22,11 @@ from typing import Any, Literal, NamedTuple
 
 from pydantic import BaseModel, ConfigDict, ValidationError, model_validator
 
+from support_desk_assistant.answer.cache import ResponseCache
+from support_desk_assistant.answer.cost import usd_to_cad
 from support_desk_assistant.answer.pipeline import MessagesClient
 from support_desk_assistant.config import Settings
-from support_desk_assistant.evals.answers import FactDecision, run_judge
+from support_desk_assistant.evals.answers import FactDecision, estimate_judge_call, run_judge
 from support_desk_assistant.evals.draft_questions import CATEGORIES
 from support_desk_assistant.evals.stats import cohens_kappa, confusion, rate_ci
 
@@ -314,31 +316,94 @@ def _section(compared: Sequence[_Compared], z: float) -> dict[str, Any]:
     }
 
 
+GroupKey = tuple[str, str, str, tuple[str, ...]]  # item id, question, answer, judge facts
+
+
+def _split_records(
+    records: Sequence[CalibrationRecord],
+) -> tuple[dict[GroupKey, list[CalibrationRecord]], list[CalibrationRecord]]:
+    """Judge records grouped by the production judge call they belong to, and the
+    number-check records (no call)."""
+    groups: dict[GroupKey, list[CalibrationRecord]] = {}
+    numbers: list[CalibrationRecord] = []
+    for r in records:
+        if r.method == "judge":
+            key = (r.item_id, r.question, r.answer, tuple(r.judge_facts))
+            groups.setdefault(key, []).append(r)
+        else:
+            numbers.append(r)
+    return groups, numbers
+
+
+def _group_call(
+    key: GroupKey, *, settings: Settings, system: str, cache: ResponseCache
+) -> tuple[list[FactDecision], int, float]:
+    """(pending decisions, API calls needed: 0 on a cache hit else 1, upper-bound CAD)."""
+    _, question, answer, judge_facts = key
+    decisions = [FactDecision(f, "judge", None, "") for f in judge_facts]
+    calls, usd = estimate_judge_call(question, answer, decisions, system, settings, cache)
+    return decisions, calls, usd_to_cad(usd, settings.answer)
+
+
+@dataclass(frozen=True)
+class CalibrationPlan:
+    """What a calibration run would do: judge groups (one call each), how many are
+    already cached, how many need an API call, and the upper bound for those in CAD."""
+
+    groups: int
+    cached: int
+    misses: int
+    upper_bound_cad: float
+
+
+def plan_calibration(
+    records: Sequence[CalibrationRecord], *, settings: Settings, system: str
+) -> CalibrationPlan:
+    """Price a calibration run without calling Anthropic."""
+    groups, _ = _split_records(records)
+    cache = ResponseCache(settings.eval_cache_dir)
+    misses, bound = 0, 0.0
+    for key in groups:
+        _, calls, cad = _group_call(key, settings=settings, system=system, cache=cache)
+        misses += calls
+        bound += cad
+    return CalibrationPlan(len(groups), len(groups) - misses, misses, bound)
+
+
 def run_calibration(
     records: Sequence[CalibrationRecord],
     *,
     settings: Settings,
     system: str,
     client: MessagesClient | None,
+    cap_cad: float | None = None,
 ) -> dict[str, Any]:
     """Agreement of the current judge (one replayed call per item group, cached responses
     are free) and of the stored number-check verdicts with the human labels. JSON-able.
-    API/network errors from the judge call propagate."""
+    With ``cap_cad``, a group that needs an API call is not replayed if the spend so far
+    plus its upper bound would pass the cap (``stopped_by_cap``), and the
+    records not replayed are counted in ``n_unreplayed`` (groups already cached are
+    still replayed, they cost nothing). API/network errors from the judge call
+    propagate."""
     z = settings.eval.ci_z
-    groups: dict[tuple[str, str, str, tuple[str, ...]], list[CalibrationRecord]] = {}
-    numbers: list[_Compared] = []
-    for r in records:
-        if r.method == "judge":
-            key = (r.item_id, r.question, r.answer, tuple(r.judge_facts))
-            groups.setdefault(key, []).append(r)
-        else:
-            numbers.append(_Compared(r, r.machine_present, ""))
+    groups, number_records = _split_records(records)
+    numbers = [_Compared(r, r.machine_present, "") for r in number_records]
+    cache = ResponseCache(settings.eval_cache_dir)
 
     judged: list[_Compared] = []
     calls = cache_hits = errors = drift = 0
     cost_cad = 0.0
-    for (_, question, answer, judge_facts), group in groups.items():
-        decisions = [FactDecision(f, "judge", None, "") for f in judge_facts]
+    stopped = False
+    unreplayed = 0
+    for key, group in groups.items():
+        _, question, answer, _ = key
+        decisions, needed, bound_cad = _group_call(
+            key, settings=settings, system=system, cache=cache
+        )
+        if cap_cad is not None and needed and cost_cad + bound_cad > cap_cad:
+            stopped = True  # a cached group later in the file is still free to replay
+            unreplayed += len(group)
+            continue
         run = run_judge(
             question, answer, decisions, settings=settings, system=system, client=client
         )
@@ -362,6 +427,9 @@ def run_calibration(
         "calls": calls,
         "cache_hits": cache_hits,
         "cost_cad": round(cost_cad, 6),
+        "cap_cad": cap_cad,
+        "stopped_by_cap": stopped,
+        "n_unreplayed": unreplayed,
         "judge": judge_section,
         "numbers": _section(numbers, z),
     }
@@ -448,6 +516,13 @@ def render_calibration_markdown(report: Mapping[str, Any]) -> str:
             f"> **WARNING: provisional.** Only n={judge['n']} judge-decided facts are "
             f"labelled, fewer than min_n={report['min_n']}; treat these agreement numbers "
             "as indicative only.",
+        ]
+    if report.get("stopped_by_cap"):
+        out += [
+            "",
+            f"> **WARNING: stopped by the spend cap (CA${report['cap_cad']:.2f}).** "
+            f"{report['n_unreplayed']} judge record(s) were not replayed; the judge numbers "
+            "below cover the rest only. Re-run: completed calls are cached.",
         ]
     out += [
         "",
