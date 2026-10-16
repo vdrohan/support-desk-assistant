@@ -2,6 +2,8 @@
 
 Short architecture decision records. Newest decisions go at the bottom. If a decision changes, add a new entry that supersedes the old one instead of editing it.
 
+Numbering goes from 21 to 23; there is no decision 22.
+
 ## 1. Qdrant as the vector database
 
 - **Decision:** Qdrant, run as a container and pinned to a specific image version in `compose.yaml`.

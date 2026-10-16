@@ -237,6 +237,9 @@ data/eval/review.html
 data/eval/judge_review.md
 data/eval/runs/
 
+# local Claude Code worktrees
+.claude/worktrees/
+
 # request log (answer pipeline)
 logs/
 .vscode/
