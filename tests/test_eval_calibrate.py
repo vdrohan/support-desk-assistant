@@ -3,6 +3,7 @@ import json
 import pytest
 
 from fakes import FakeAnthropic, make_message
+from support_desk_assistant.answer.cost import Usage, cost_usd, usd_to_cad
 from support_desk_assistant.config import Settings
 from support_desk_assistant.evals.calibrate import (
     CalibrationRecord,
@@ -10,6 +11,7 @@ from support_desk_assistant.evals.calibrate import (
     import_labels,
     load_records,
     parse_sheet,
+    plan_calibration,
     record_id,
     render_calibration_markdown,
     run_calibration,
@@ -393,3 +395,73 @@ def test_round_trip_through_the_real_review_sheet(settings):
         ("ev-002", "judge"),
     ]
     assert parse_sheet(blind).unlabelled == 3
+
+
+# --- Dry-run planning and the spend cap --------------------------------------------------
+
+
+def test_plan_calibration_counts_cached_and_missing_groups_without_a_client(settings):
+    item1 = ["fact a", "fact b"]
+    records = [
+        rec("ev-001", "fact a", judge_facts=item1),
+        rec("ev-001", "fact b", judge_facts=item1),  # same call group as fact a
+        rec("ev-002", "fact c"),
+        rec("ev-003", "fact d", method="numbers"),  # never needs a call
+    ]
+    plan = plan_calibration(records, settings=settings, system=SYSTEM)
+    assert (plan.groups, plan.cached, plan.misses) == (2, 0, 2)
+    assert plan.upper_bound_cad > 0
+
+    # Serve one group from a real (fake-client) run: the plan then sees it as cached.
+    run_calibration(
+        [records[2]],
+        settings=settings,
+        system=SYSTEM,
+        client=FakeAnthropic(verdicts((1, True, "ok"))),
+    )
+    plan = plan_calibration(records, settings=settings, system=SYSTEM)
+    assert (plan.groups, plan.cached, plan.misses) == (2, 1, 1)
+
+    run_calibration(
+        records[:2],
+        settings=settings,
+        system=SYSTEM,
+        client=FakeAnthropic(verdicts((1, True, "ok"), (2, True, "ok"))),
+    )
+    done = plan_calibration(records, settings=settings, system=SYSTEM)
+    assert (done.misses, done.upper_bound_cad) == (0, 0.0)
+
+
+def test_run_calibration_cap_stops_calls_but_still_replays_cached_groups(settings):
+    r1, r2, r3 = (rec(f"ev-00{i}", f"fact {i}") for i in (1, 2, 3))
+    # ev-003 is already cached; ev-001 and ev-002 are not.
+    run_calibration(
+        [r3], settings=settings, system=SYSTEM, client=FakeAnthropic(verdicts((1, True, "ok")))
+    )
+    bound_one = plan_calibration([r1], settings=settings, system=SYSTEM).upper_bound_cad
+    actual = usd_to_cad(
+        cost_usd(Usage(input_tokens=1000, output_tokens=100), "claude-haiku-5-5", settings.answer),
+        settings.answer,
+    )
+    # Room for one call: after ev-001 the spend is `actual`, and actual + bound_one > cap.
+    cap = bound_one + actual / 2
+    client = FakeAnthropic(verdicts((1, True, "ok")))
+    report = run_calibration(
+        [r1, r2, r3], settings=settings, system=SYSTEM, client=client, cap_cad=cap
+    )
+    assert len(client.calls) == 1 and report["calls"] == 1 and report["cache_hits"] == 1
+    assert report["stopped_by_cap"] and report["n_unreplayed"] == 1
+    assert report["judge"]["n"] == 2  # ev-001 (called) and ev-003 (cached); ev-002 skipped
+    assert report["cost_cad"] <= cap
+    assert "stopped by the spend cap" in render_calibration_markdown(report)
+
+
+def test_run_calibration_without_cap_never_stops(settings):
+    report = run_calibration(
+        [rec("ev-001", "fact a")],
+        settings=settings,
+        system=SYSTEM,
+        client=FakeAnthropic(verdicts((1, True, "ok"))),
+    )
+    assert report["stopped_by_cap"] is False and report["n_unreplayed"] == 0
+    assert report["cap_cad"] is None
