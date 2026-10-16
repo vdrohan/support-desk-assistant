@@ -946,7 +946,11 @@ def test_import_labels_then_calibrate_end_to_end(env, settings, qdrant, capsys, 
     client = env["client"] = RoutingAnthropic(
         judge_replies={Q_APPLY: verdicts((1, False, "not stated"))}
     )
-    assert main(["--calibrate", str(settings.calibration_path)]) == 0
+    assert main(["--calibrate", str(settings.calibration_path)]) == 0  # dry run: needs --yes
+    out = capsys.readouterr().out
+    assert client.calls == [] and "dry run: 1 judge call(s) would be made" in out
+    assert len(list(settings.runs_dir.glob("judge_calibration_*.json"))) == 1  # no new report
+    assert main(["--calibrate", str(settings.calibration_path), "--yes"]) == 0
     out = capsys.readouterr().out
     assert len(client.judge_calls()) == 1 and "Judge: 1 call(s), 0 cache hit(s)" in out
     assert "human present, machine absent" in out
@@ -971,7 +975,7 @@ def test_calibrate_without_records_is_an_error(env, settings, capsys):
     assert "no calibration records" in capsys.readouterr().err
 
 
-def test_calibrate_api_error_exits_1(env, settings, capsys, tmp_path):
+def _one_judge_record_file(tmp_path):
     from support_desk_assistant.evals.calibrate import CalibrationRecord, record_id
 
     fact = "Apply for EI as soon as possible"
@@ -983,6 +987,11 @@ def test_calibrate_api_error_exits_1(env, settings, capsys, tmp_path):
     )  # fmt: skip
     path = tmp_path / "cal.jsonl"
     path.write_text(record.model_dump_json() + "\n")
+    return path
+
+
+def test_calibrate_api_error_exits_1(env, settings, capsys, tmp_path):
+    path = _one_judge_record_file(tmp_path)
     env["client"] = RoutingAnthropic(
         judge_replies={
             Q_APPLY: anthropic.APIConnectionError(
@@ -990,9 +999,37 @@ def test_calibrate_api_error_exits_1(env, settings, capsys, tmp_path):
             )
         }
     )
-    assert main(["--calibrate", str(path)]) == 1
+    assert main(["--calibrate", str(path), "--yes"]) == 1
     assert "Anthropic API error" in capsys.readouterr().err
     assert not list(settings.runs_dir.glob("judge_calibration_*"))
+
+
+def test_calibrate_without_yes_never_calls_anthropic_on_a_cache_miss(
+    env, settings, capsys, tmp_path
+):
+    path = _one_judge_record_file(tmp_path)
+    env["client"] = NoAnthropic()  # any use fails the test
+    assert main(["--calibrate", str(path)]) == 0
+    out = capsys.readouterr().out
+    assert "1 judge call group(s): 0 cached, 1 need an API call" in out
+    assert "dry run: 1 judge call(s) would be made; nothing sent to Anthropic" in out
+    assert not list(settings.runs_dir.glob("judge_calibration_*"))  # no report either
+
+
+def test_calibrate_yes_is_refused_when_the_estimate_passes_the_cap(env, settings, capsys, tmp_path):
+    path = _one_judge_record_file(tmp_path)
+    env["client"] = NoAnthropic()
+    assert main(["--calibrate", str(path), "--yes", "--cap", "0.000001"]) == 2
+    out = capsys.readouterr().out
+    assert "Refused" in out and "exceeds the cap CA$0.00" in out
+    assert not list(settings.runs_dir.glob("judge_calibration_*"))
+    # The default cap (EvalSettings.spend_cap_cad) is applied when --cap is not given.
+    client = env["client"] = RoutingAnthropic(
+        judge_replies={Q_APPLY: verdicts((1, True, "says apply right away"))}
+    )
+    assert main(["--calibrate", str(path), "--yes"]) == 0
+    assert len(client.judge_calls()) == 1
+    assert "Judge: 1 call(s)" in capsys.readouterr().out
 
 
 # --- CLI misuse ----------------------------------------------------------------------------
@@ -1004,8 +1041,12 @@ def test_calibrate_api_error_exits_1(env, settings, capsys, tmp_path):
         ["--export", "--calibrate"],
         ["--import-labels", "s.md", "--export"],
         ["--import-labels", "s.md", "--calibrate"],
-        ["--calibrate", "--yes"],
         ["--calibrate", "--limit", "1"],
+        ["--calibrate", "--allow-dirty"],
+        ["--calibrate", "--cap", "0"],
+        ["--export", "--yes"],
+        ["--export", "--cap", "1"],
+        ["--import-labels", "s.md", "--yes"],
         ["--import-labels", "s.md", "--allow-dirty"],
         ["--export", "--allow-dirty"],
         ["--reveal"],
