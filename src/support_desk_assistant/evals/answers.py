@@ -10,8 +10,9 @@ docs/decisions.md #20 (eval set, per-category reporting), #21 (scoring, runner) 
 
 Fact decisions, item scoring and aggregation are pure functions (no I/O). Anthropic is
 called only by a ``--yes`` run (answers via the pipeline, then the judge) and by
-``--calibrate``; completed responses are cached (answers under ``data/cache/answers``,
-judge verdicts under ``settings.eval_cache_dir``), so a re-run resumes and costs nothing.
+``--calibrate --yes`` (and only for judge verdicts not already cached). Completed
+responses are cached (answers under ``data/cache/answers``, judge verdicts under
+``settings.eval_cache_dir``), so a re-run resumes and costs nothing.
 
 The default is a DRY RUN: it retrieves every selected question (Voyage query embeddings
 for questions not in the embedding cache, so it needs the Qdrant tunnel), prices the run
@@ -32,7 +33,8 @@ agreement on them.
     uv run sda-eval-answers --yes --allow-dirty   # full run to results/ from a dirty tree
     uv run sda-eval-answers --export [RESULTS] [--reveal]   # blind sheet; --reveal: not blind
     uv run sda-eval-answers --import-labels SHEET [--from RESULTS]
-    uv run sda-eval-answers --calibrate [FILE]    # judge calls served from cache if possible
+    uv run sda-eval-answers --calibrate [FILE] [--yes] [--cap CAD]   # dry run if any judge
+                                                  # call is uncached; cached is free
 
 RESULTS is a ``.summary.json`` or ``.jsonl`` results file (default: the newest).
 
@@ -1992,9 +1994,14 @@ def import_labels_cli(settings: Settings, sheet: Path, results_file: Path | None
     return 1 if result.problems or appended.conflicts else 0
 
 
-def calibrate_cli(settings: Settings, records_file: Path) -> int:
-    """``--calibrate``: replay the judge on the labelled facts (cached verdicts are free)
-    and report agreement with the human labels. Writes json + md into runs/."""
+def calibrate_cli(settings: Settings, records_file: Path, *, yes: bool, cap_cad: float) -> int:
+    """``--calibrate``: replay the judge on the labelled facts and report agreement with
+    the human labels. Writes json + md into runs/.
+
+    Dry-run-first like the main runner (decisions #21, #23): cached judge verdicts are
+    free and always replayed, but if any judge call is a cache miss nothing is sent to
+    Anthropic without ``--yes``; with ``--yes`` the run is refused if the upper bound of
+    the missing calls passes ``cap_cad`` and stops before any call that would."""
     from support_desk_assistant.evals import calibrate
 
     try:
@@ -2013,10 +2020,32 @@ def calibrate_cli(settings: Settings, records_file: Path) -> int:
     except SystemPromptNotReady as exc:
         _err(str(exc))
         return 2
+    plan = calibrate.plan_calibration(records, settings=settings, system=judge_system)
+    print(
+        f"Calibration plan: {len(records)} record(s), {plan.groups} judge call group(s): "
+        f"{plan.cached} cached, {plan.misses} need an API call"
+        + (f" (<= CA${plan.upper_bound_cad:.4f} vs cap CA${cap_cad:.2f})" if plan.misses else "")
+    )
+    if plan.misses and not yes:
+        print(
+            f"dry run: {plan.misses} judge call(s) would be made; nothing sent to Anthropic. "
+            "Add --yes to run (cached verdicts alone are free and need no --yes)."
+        )
+        return 0
+    if plan.upper_bound_cad > cap_cad:
+        print(
+            f"Refused: the estimate CA${plan.upper_bound_cad:.4f} exceeds the cap "
+            f"CA${cap_cad:.2f}. Raise --cap, or label fewer facts. Nothing sent to Anthropic."
+        )
+        return 2
     run_id = provenance.new_run_id()
     try:
         report = calibrate.run_calibration(
-            records, settings=settings, system=judge_system, client=_LazyClient(settings)
+            records,
+            settings=settings,
+            system=judge_system,
+            client=_LazyClient(settings),
+            cap_cad=cap_cad,
         )
     except anthropic.APIError as exc:
         _err(
@@ -2047,6 +2076,12 @@ def calibrate_cli(settings: Settings, records_file: Path) -> int:
     )
     print(f"wrote {json_path} and {md_path}")
     print(f"{directory} is gitignored: keep a result worth keeping with `git add -f` on both.")
+    if report["stopped_by_cap"]:
+        print(
+            f"Stopped by the spend cap (CA${cap_cad:.2f}): {report['n_unreplayed']} record(s) "
+            "not replayed. Completed calls are cached; a re-run resumes."
+        )
+        return 1
     return 0
 
 
@@ -2121,20 +2156,24 @@ def main(argv: list[str] | None = None) -> int:
         const="",
         metavar="FILE",
         help="judge vs human agreement on the labelled facts (default "
-        f"{settings.calibration_path}); cached judge verdicts are free",
+        f"{settings.calibration_path}); cached judge verdicts are free, any uncached call "
+        "needs --yes and respects --cap",
     )
     args = parser.parse_args(argv)
 
-    run_options = (
-        args.yes,
-        args.limit,
-        args.category,
-        args.model,
-        args.k,
-        args.dataset,
-        args.cap,
-        args.allow_dirty,
-    )
+    run_options = {
+        "--yes": args.yes,
+        "--limit": args.limit,
+        "--category": args.category,
+        "--model": args.model,
+        "-k": args.k,
+        "--dataset": args.dataset,
+        "--cap": args.cap,
+        "--allow-dirty": args.allow_dirty,
+    }
+    # Run options each offline/side mode may still take: --calibrate's judge calls need
+    # --yes and --cap; --export and --import-labels take none.
+    mode_options = {"--calibrate": {"--yes", "--cap"}}
     modes = [
         flag
         for flag, value in (
@@ -2146,8 +2185,13 @@ def main(argv: list[str] | None = None) -> int:
     ]
     if len(modes) > 1:
         parser.error(f"{' and '.join(modes)} are mutually exclusive")
-    if modes and any(o not in (None, False) for o in run_options):
-        parser.error(f"{modes[0]} takes no run options")
+    if modes:
+        allowed = mode_options.get(modes[0], set())
+        given = [f for f, v in run_options.items() if v not in (None, False) and f not in allowed]
+        if given:
+            parser.error(f"{modes[0]} does not take {', '.join(given)}")
+        if args.cap is not None and args.cap <= 0:
+            parser.error("--cap must be positive")
     if args.reveal and args.export is None:
         parser.error("--reveal is valid only with --export")
     if args.from_results is not None and args.import_labels is None:
@@ -2160,7 +2204,10 @@ def main(argv: list[str] | None = None) -> int:
         return import_labels_cli(settings, args.import_labels, args.from_results)
     if args.calibrate is not None:
         return calibrate_cli(
-            settings, Path(args.calibrate) if args.calibrate else settings.calibration_path
+            settings,
+            Path(args.calibrate) if args.calibrate else settings.calibration_path,
+            yes=args.yes,
+            cap_cad=settings.eval.spend_cap_cad if args.cap is None else args.cap,
         )
 
     model = args.model or settings.answer.model
