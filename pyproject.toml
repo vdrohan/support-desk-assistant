@@ -26,6 +26,7 @@ sda-search = "support_desk_assistant.retrieve:main"
 sda-eval-retrieval = "support_desk_assistant.evals.retrieval:main"
 sda-eval-draft = "support_desk_assistant.evals.draft_questions:main"
 sda-eval-review = "support_desk_assistant.evals.review:main"
+sda-eval-answers = "support_desk_assistant.evals.answers:main"
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13"]
