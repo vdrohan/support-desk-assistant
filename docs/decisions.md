@@ -249,3 +249,81 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - The citation validator (`validate_answer`, decision 15) and the abstention check (decision 17) stay deterministic and free.
   - Results are reported per category.
 - **Not done:** the scoring runner is not built, no judge calls have been made, and no answer scores exist yet. The three questions above are not in v1. LLM-only judging of every fact was not chosen: it costs tokens on every run and isn't deterministic (same reasoning as decision 12).
+
+## 21. Answer scoring: number gate plus judge, per-category report, capped dry-run-first runner
+
+- **Decision:** `sda-eval-answers` (`src/support_desk_assistant/evals/answers.py`) answers every item of `eval_set_v1.jsonl` through the answer pipeline, scores it and reports per category. It refines the scoring rule of [decision 20](#20-answer-eval-set-v1-58-accepted-questions-per-category-reporting-frozen-after-first-results-hybrid-scoring).
+- **Why decision 20's rule changed:** a literal "fact has a digit -> normalized substring" would fail paraphrased sentence facts. 23 of the 48 digit-containing key facts in v1 are 7 words or longer, e.g. `ev-023`'s "Expect a decision by mail within 28 days from when we receive the application", which a correct answer will rarely repeat word for word.
+- **Fact decision**, after the normalization of [decision 12](#12-retrieval-eval-versioned-question-set-page-hit-and-answer-hit-oracle-routing), in this order:
+  - Abstained, generation not `ok`, or empty answer: every fact absent, method `none`, no judge call.
+  - A numeric token of the fact (money, number, percent, ordinal; `$` and thousands commas stripped, `2.0` = `2`, `5%` ≠ `5`; "one" to "ten" in the answer count as digits) missing from the answer: absent, method `numbers`, free.
+  - All numbers present, the fact has at most `atomic_fact_max_words` (6) words, and every content word of the fact (alphabetic, at least `fact_content_min_chars` (4) characters, not a stopword, trailing "s" folded) is in the answer: present, method `numbers`, free. A fact with no content words (e.g. "$1,507.65") qualifies on its numbers alone.
+  - Everything else goes to the judge: facts without numbers, long facts with their numbers present, and short facts with a content word missing.
+  - The content-word guard is there for numbers in the wrong context: for the fact "maximum of $729 a week", an answer saying "the minimum is $729" lacks "maximum", so the fact goes to the judge instead of passing.
+- **Judge:**
+  - One call per item, covering only the facts that need it. It sees the question, the answer and the numbered facts; no chunks and no citations. Prompt: `prompts/eval_judge.md`.
+  - Native structured output (`JudgeResult`: one `fact_index`, `present`, `reason` per fact), no sampling parameters, as in [decision 15](#15-answer-step-native-structured-output-validated-twice).
+  - Model `EvalSettings.judge_model` (`claude-haiku-5-5`), the same family as the answer model. That is a known bias (a model may rate its own phrasing kindly), and the reason the hand-review export below exists.
+  - Responses are cached in `data/cache/evals/` (gitignored), keyed like the answer cache plus `judge_schema_version`.
+  - A refusal, a `max_tokens` stop, invalid JSON or a verdict set that is not exactly the requested fact numbers counts every judged fact of that item as absent and is reported as a judge error.
+- **Item rules:**
+  - *Answerable* passes when it did not abstain, generation is `ok`, `validate_answer` passes, every key fact is present, the gold page is cited (`multi_page`: every gold page) and no decoy page is cited (`confusable` only). `gold_cited` and `decoy_cited` are separate columns.
+  - *Unanswerable* (both categories) passes when the `abstained` flag is set and the validator passes. Strict on the flag: a "the documents don't cover this" reply with `abstained=false` fails. A refusal or `max_tokens` fallback is not a correct abstention. Gate and model abstentions ([decision 17](#17-two-layer-abstention)) are counted separately.
+  - *Attribution* of an answerable failure: `retrieval_page` (gold page not in the top k), `retrieval_chunk` (page retrieved but no key fact in a top-k chunk from a gold page, the answer-hit check of decision 12), otherwise `generation`.
+- **Report:** one markdown table per group (single page; hard categories: `multi_page`, `confusable`, `time_sensitive`; abstention), one row per category with *n*, no overall number ([decision 20](#20-answer-eval-set-v1-58-accepted-questions-per-category-reporting-frozen-after-first-results-hybrid-scoring)). Below them: facts decided by method, judge errors, and a failures list. Full runs write `answers_<collection>_<model>_<date>.{json,md}` to `data/eval/results/`; partial runs (`--limit`, which is per category, `--category`, or a spend-cap stop) write the same pair to the gitignored `data/eval/runs/`.
+- **Cost controls:**
+  - The default is a dry run. Anthropic is called only with `--yes`.
+  - Spend cap `EvalSettings.spend_cap_cad` (CA$0.25), overridable with `--cap`. Pre-flight, `--yes` is refused (exit 2) if the upper-bound estimate (input from characters, output at `max_tokens`) exceeds the cap. During the run, it stops after the item at which actual spend reaches the cap (exit 1), so the cap can be overshot by at most one item.
+  - Answer responses ([decision 18](#18-response-cache-and-prompt-caching)) and judge responses are cached, so a re-run is free and a stopped run resumes.
+  - The dry run is not offline: it retrieves every selected question, so it makes Voyage query-embedding calls for questions not in the embedding cache and needs the Qdrant tunnel. Its Voyage cost uses `EmbedSettings.usd_per_mtok`, an UNVERIFIED placeholder (0.06).
+- **Hand review:** `sda-eval-answers --export [RESULTS.json]` (offline, seeded) writes `data/eval/judge_review.md` (gitignored) from the newest results file: (A) up to `judge_review_n` (10) judged facts, balanced present/absent; (B) up to `judge_review_gate_n` (4) facts the number check marked present; (C) every `unanswerable_in_domain` answer. Each fact has a blank "Your verdict" line.
+- **Not done:**
+  - No baseline run exists yet. Answer scores: Pending.
+  - Whether time-sensitive answers state the date is not scored.
+  - A short fact whose numbers and content words all appear in a wrong-context answer is still marked present without the judge. Export section B samples these.
+  - `execute()` still appends eval calls to `logs/requests.jsonl`, mixed with `sda ask` traffic.
+  - A same-day re-run overwrites that day's results file.
+  - No `--collection` option: the runner uses the configured `IndexSettings.collection`.
+
+## 23. Answer eval runner: overall rows, abstention and citation metrics, provenance, hard cap, blind judge calibration
+
+- **Decision:** extend `sda-eval-answers` rather than add a second CLI. New modules: `evals/stats.py` (Wilson interval, confusion counts, Cohen's kappa), `evals/breakdown.py` (overall, by program, abstention, citation, failure attribution), `evals/provenance.py` (reproducibility block), `evals/calibrate.py` (judge vs human labels).
+- **Supersedes:**
+  - The "no overall number" rule of [decision 20](#20-answer-eval-set-v1-58-accepted-questions-per-category-reporting-frozen-after-first-results-hybrid-scoring) and [decision 21](#21-answer-scoring-number-gate-plus-judge-per-category-report-capped-dry-run-first-runner)'s report. Overall rows are now shown: answerable pass rate as micro (over items) with macro (mean of the answerable category rates) beside it, and abstention recall as a separate row. The answerable pass rate and abstention recall are never blended. Category tables stay first and remain the primary view; decision 20's reason for them (`single_page` is 32 of 58 items) stands.
+  - From decision 21's **Not done**: the output format, the same-day overwrite and the soft cap (below). Decision 21's other points stand.
+- **Metric definitions** (`breakdown.summarize`, every rate with k, n and a 95% Wilson interval):
+  - *Abstention:* positive class = should abstain (the 9 unanswerable items). Recall = correct abstentions / 9. Precision = correct abstentions / intentional abstentions, where intentional means status gate or ok (gate or model abstention). Refusal and `max_tokens` fallbacks are not in the denominator; they are counted as generation failures in their own row. Also reported: by gate, by model, false abstentions on answerable items, missed.
+  - *Citation validity:* `validate_answer` pass rate over non-abstained answers with status ok. Abstentions are excluded because an empty, uncited abstention passes trivially. Gold cited and mean citation precision (cited pages that are gold) are reported for the answerable ones.
+  - *By program:* answerable items joined to programs through their gold URLs in `data/manifest.jsonl`. An item whose gold pages span programs counts under each (1 item in v1, so the program rows sum to 50 for 49 answerable items). Unanswerables have no gold pages and get one `n/a` row with their correct-abstention rate.
+  - *Failure attribution:* shares of failed answerable items by `retrieval_page`, `retrieval_chunk`, `generation` (rules from decision 21).
+  - *Why Wilson intervals:* n is small (9 unanswerables; programs 7 to 14 answerable items), and Wilson behaves at k = 0 and k = n where the normal approximation doesn't. z is `EvalSettings.ci_z` (1.96). Every row shows its real n.
+- **Output files:** a run writes three files named `answers_<collection>_<model>_<run_id>`: `.jsonl` (one result row per item), `.summary.json` (meta and metrics) and `.md`. The run id is a UTC timestamp (`YYYYMMDDTHHMMSSZ`), so runs on the same day no longer overwrite each other.
+- **Provenance** (`meta.provenance`): run id and time; git sha, dirty flag, a hash of the uncommitted diff plus untracked paths; dataset name and sha256; manifest sha256, collection, Qdrant points count, embed model and dimension; answer and judge prompt sha256; answer and judge model ids with their profiles (`max_tokens`, thinking, effort); k, `min_score`, prompt caching, schema versions, `usd_cad`, `prices_as_of`; the scorer config (scorer version, `atomic_fact_max_words`, `fact_content_min_chars`, stopwords, number words) and its sha256; SDK versions (anthropic, voyageai, qdrant-client, pydantic).
+  - The corpus and index fingerprint is there because an answer score depends on what was retrieved: a recrawl or reindex changes it with no code change.
+  - The scorer-config hash is there because the number gate decides facts without the judge: changing a stopword or a threshold can change a score, and two runs are only comparable if the hash matches.
+- **Hard cap:** before each item, including the first, the run stops if the spend so far (Voyage for the plan, answers, judge) plus that item's upper bound would pass the cap. The cap is never crossed by a planned bound. A stopped run exits 1 and is partial. The pre-flight refusal (exit 2 if the whole-run estimate is over the cap) is unchanged.
+- **Spent vs list cost:** the report gives tokens by kind (input, output, cache write, cache read) for answers and the judge, then CAD spent this run and list CAD (what the Anthropic responses cost when they were made, from the usage stored with the cached response). A cached re-run otherwise reports CA$0, which says nothing about what a fresh run costs.
+- **Dirty tree:** a full run from a working tree with uncommitted changes goes to the gitignored `data/eval/runs/` (the summary's `results_dir_reason` says why), unless `--allow-dirty`. Partial runs (`--limit`, `--category`, a cap stop) always go to `runs/`. A committed result must be tied to a commit.
+- **Calibration protocol:**
+  - `--export` now writes a **blind** sheet: the judge and number-check verdict lines are left out (`--reveal` shows them, and such a sheet must not be imported). Section A has up to `judge_review_n` (40) judge-decided facts, balanced on the hidden verdict; section B up to `judge_review_gate_n` (10) facts the number gate marked present; section C every `unanswerable_in_domain` answer (not imported).
+  - `--import-labels SHEET [--from RESULTS]` turns the filled sheet into records in `data/eval/judge_calibration.jsonl` (committed). Each record is self-contained: question, answer, the fact, and for judge facts the full list of facts sent in the original judge call with the fact's index, so the replay sends the exact production message. Duplicates are skipped; a label that conflicts with a stored one is reported and not written.
+  - `--calibrate [FILE]` replays the judge on the judge records (cached verdicts are free) and reports agreement with a Wilson interval, Cohen's kappa, the confusion matrix, false present (of human-absent; inflates scores) vs false absent (of human-present; deflates scores), per-category agreement and every disagreement with the judge's reason. Number-gate records are compared with the verdict stored at labelling time, no API call, in a separate section. Drift counts replayed judge verdicts that differ from the machine verdict stored at labelling time. Output goes to `runs/judge_calibration_<run_id>.{json,md}`.
+  - *Minimum n:* below `calibration_min_n` (30) labelled judge facts the report is marked provisional. With 10 labels, 9/10 agreement has a 95% interval of [0.60, 0.98]; at 27/30 it is [0.74, 0.97]. That is why `judge_review_n` went from 10 to 40 (and `judge_review_gate_n` from 4 to 10).
+- **Dataset guard:** `tests/test_eval_dataset.py` pins that the three questions left out of v1 (decision 20) are absent.
+- **Freeze reminder** (decision 20): do exploratory runs to `runs/`, fix genuine labelling errors found there, then commit and run the baseline from a clean tree. After that, v1 is frozen.
+- **Rejected:**
+  - A separate `sda-eval-run` CLI: it would duplicate most of the 2,186-line `answers.py` (plan, cache, cap, scoring).
+  - Per-category tables only for the overall view: hides the total a reader asks for first. Micro only: dominated by `single_page`, so macro sits beside it.
+  - Relaxed abstention (counting a "the documents don't cover this" reply with `abstained=false` as correct): the strict flag from decision 21 is kept, because the flag, not the wording, is what calling code can act on.
+  - Showing the judge verdict to the labeller: anchoring would inflate agreement.
+  - A Sonnet cross-judge now: costs a second judge on every run; deferred unless kappa comes out low.
+  - A soft cap checked after each item: can overshoot by one item.
+- **Not done:**
+  - No baseline run exists, so there is no answer score, cost per run or judge agreement. Pending: baseline run.
+  - `data/eval/judge_calibration.jsonl` has no labels yet (the file does not exist until the first `--import-labels`).
+  - Judge non-determinism is untested: no `--fresh-judge` variance check and no `--compare A B` verdict-flip report.
+  - The run id has one-second resolution.
+  - Eval calls still append to `logs/requests.jsonl`.
+  - Time-sensitive answers are not checked for stating the date.
+  - The Haiku judge shares a model family with the Haiku answerer.
+  - The Voyage price (`EmbedSettings.usd_per_mtok`) and `usd_cad` remain placeholders.

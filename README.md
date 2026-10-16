@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The HTTP API and answer scoring don't exist yet. See [Roadmap](#roadmap).
+> **Status: Phase 1 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) exists but has not been run yet, so there are no answer scores. The HTTP API doesn't exist yet. See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -50,7 +50,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
-| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, then `/ask` endpoint, answer scoring | 🚧 in progress |
+| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (not run yet, no answer scores), then `/ask` endpoint | 🚧 in progress |
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
@@ -127,6 +127,19 @@ Re-runs are idempotent: unchanged chunks aren't re-embedded or re-written.
 uv run sda-eval-retrieval --validate   # check the dataset against the corpus, no API calls
 uv run sda-eval-retrieval              # writes data/eval/results/<collection>_<date>.{json,md}
 ```
+
+### Evaluate answers
+
+```bash
+uv run sda-eval-answers                   # dry run: plan and upper-bound cost, nothing sent to Claude
+uv run sda-eval-answers --limit 2 --yes   # first 2 items per category, written to data/eval/runs/
+uv run sda-eval-answers --yes             # full run from a clean tree: data/eval/results/
+uv run sda-eval-answers --export          # offline blind hand-review sheet (--reveal shows the verdicts)
+uv run sda-eval-answers --import-labels data/eval/judge_review.md   # filled sheet -> judge_calibration.jsonl
+uv run sda-eval-answers --calibrate       # judge vs human agreement; calls Claude unless cached
+```
+
+Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and retrieves every question). Runs with `--yes` call Claude and cost money; `EvalSettings.spend_cap_cad` (override with `--cap`) is checked before the run and before each item. Each run writes `answers_<collection>_<model>_<run_id>.{jsonl,summary.json,md}`. Partial runs, and full runs from a dirty working tree, go to the gitignored `data/eval/runs/`; `--allow-dirty` writes the latter to `results/`. Scoring rules: [decisions #21](docs/decisions.md#21-answer-scoring-number-gate-plus-judge-per-category-report-capped-dry-run-first-runner); breakdowns, provenance and calibration: [decisions #23](docs/decisions.md#23-answer-eval-runner-overall-rows-abstention-and-citation-metrics-provenance-hard-cap-blind-judge-calibration).
 
 There's no API to run yet.
 
