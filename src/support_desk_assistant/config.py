@@ -71,6 +71,9 @@ class EmbedSettings(BaseModel):
     backoff_base_s: float = 2.0
     max_backoff_s: float = 60.0
     timeout_s: float = 60.0
+    # UNVERIFIED placeholder: no Voyage price is recorded in the repo; check against
+    # Voyage's price list before trusting cost estimates (same spirit as ``usd_cad``).
+    usd_per_mtok: float = 0.06
 
 
 class IndexSettings(BaseModel):
@@ -123,6 +126,31 @@ class EvalSettings(BaseModel):
     # Lines of context (blank-line blocks) the review helper shows around a key fact.
     review_context_blocks: int = 1
     review_excerpt_chars: int = 1800
+
+    # Answer scoring runner (docs/decisions.md #20, #21).
+    # Must be a key of ``AnswerSettings.models`` (prices and request profile come from there).
+    judge_model: str = "claude-haiku-5-5"
+    judge_max_tokens: int = 400
+    judge_prompt_path: Path = Path("prompts/eval_judge.md")
+    # Bump when the judge prompt or schema changes (part of the judge cache key).
+    judge_schema_version: int = 1
+    # Facts this short (in words) are checked by string matching, not the judge.
+    atomic_fact_max_words: int = 6
+    # Content words shorter than this are ignored when matching a fact.
+    fact_content_min_chars: int = 4
+    # A run stops before its estimated spend passes this.
+    spend_cap_cad: float = 0.25
+    # Hand-check export of judge verdicts (gitignored working file).
+    judge_review_file: str = "judge_review.md"
+    judge_review_n: int = 40
+    judge_review_gate_n: int = 10
+    judge_review_seed: int = 20261013
+    # Human vs judge verdicts on hand-reviewed facts (one JSON object per line).
+    calibration_file: str = "judge_calibration.jsonl"
+    # Fewer calibrated facts than this: agreement numbers are reported as provisional.
+    calibration_min_n: int = 30
+    # z for the Wilson confidence intervals in reports (1.96 = 95%).
+    ci_z: float = 1.96
 
 
 class ModelProfile(BaseModel):
@@ -248,6 +276,18 @@ class Settings(BaseSettings):
     @property
     def review_html_path(self) -> Path:
         return self.eval_dir / self.eval.review_html_file
+
+    @property
+    def runs_dir(self) -> Path:
+        return self.eval_dir / "runs"
+
+    @property
+    def judge_review_path(self) -> Path:
+        return self.eval_dir / self.eval.judge_review_file
+
+    @property
+    def calibration_path(self) -> Path:
+        return self.eval_dir / self.eval.calibration_file
 
     @property
     def eval_cache_dir(self) -> Path:
