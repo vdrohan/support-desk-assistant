@@ -10,6 +10,6 @@ You check whether an answer states a list of facts. You are given a question, an
 
 # Output
 - Return one verdict per fact. Use the fact's number as fact_index.
-- Set present to true or false.
-- Write reason as one short sentence that quotes or points at the relevant words of the answer, or says what is missing.
+- First write reason as one short sentence that quotes or points at the relevant words of the answer, or says what is missing.
+- Then set present to true or false, consistent with the reason.
 - Output only the structured result.

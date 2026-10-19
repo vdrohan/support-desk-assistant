@@ -462,8 +462,10 @@ class JudgeItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     fact_index: int  # 1-based, as numbered in the user message
-    present: bool
+    # reason before present: the model writes in schema order, so it reasons before it
+    # commits to a verdict (decision 25).
     reason: str
+    present: bool
 
 
 class JudgeResult(BaseModel):

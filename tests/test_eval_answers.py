@@ -621,6 +621,12 @@ def test_judge_request_shape(jsettings):
     assert judge_schema()["properties"]["verdicts"]["type"] == "array"
 
 
+def test_judge_schema_puts_reason_before_verdict():
+    # Decision 25: the model writes fields in schema order, so the reason must come first.
+    item = judge_schema()["$defs"]["JudgeItem"]
+    assert list(item["properties"]) == ["fact_index", "reason", "present"]
+
+
 def test_judge_request_cache_control_only_with_prompt_caching(jsettings):
     cached = jsettings.model_copy(update={"answer": AnswerSettings(prompt_caching=True)})
     block = build_judge_request("SYS", "USER", cached)["system"][0]
@@ -633,8 +639,9 @@ def test_judge_cache_key_depends_on_inputs(jsettings):
     key = judge_cache_key("SYS", "USER", jsettings)
     assert key != judge_cache_key("SYS2", "USER", jsettings)
     assert key != judge_cache_key("SYS", "USER2", jsettings)
+    version = jsettings.eval.judge_schema_version
     bumped = jsettings.model_copy(
-        update={"eval": jsettings.eval.model_copy(update={"judge_schema_version": 2})}
+        update={"eval": jsettings.eval.model_copy(update={"judge_schema_version": version + 1})}
     )
     assert key != judge_cache_key("SYS", "USER", bumped)
 
