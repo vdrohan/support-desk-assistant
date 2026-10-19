@@ -176,7 +176,7 @@ class AnswerSettings(BaseModel):
     comparison_model: str = "claude-sonnet-5-5"
     models: dict[str, ModelProfile] = {
         "claude-haiku-5-5": ModelProfile(
-            max_tokens=500,
+            max_tokens=1000,  # 500 truncated 8 of 58 baseline answers (decisions.md #24)
             thinking="disabled",
             effort="low",
             input_usd_per_mtok=0.10,  # prompts <= 100K tokens; $0.50/$2.50 beyond

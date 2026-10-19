@@ -117,7 +117,7 @@ def test_request_shape_for_haiku(settings):
     run(settings, client)
     (call,) = client.calls
     assert call["model"] == "claude-haiku-5-5"
-    assert call["max_tokens"] == 500
+    assert call["max_tokens"] == 1000
     assert call["thinking"] == {"type": "disabled"}
     assert call["output_config"]["effort"] == "low"
     fmt = call["output_config"]["format"]
@@ -154,7 +154,7 @@ def test_sonnet_profile_thinks_and_has_headroom(settings):
     run(settings, client, model="claude-sonnet-5-5")
     call = client.calls[0]
     assert call["model"] == "claude-sonnet-5-5" and call["thinking"] == {"type": "adaptive"}
-    assert call["max_tokens"] > 500
+    assert call["max_tokens"] > 1000
 
 
 def test_prompt_caching_flag_defaults_off_and_adds_cache_control_when_on(settings):
