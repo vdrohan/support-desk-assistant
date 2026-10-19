@@ -1,0 +1,501 @@
+{
+  "meta": {
+    "run_id": "20261019T133733Z",
+    "created_at": "2026-10-19T13:40:42+00:00",
+    "git_sha": "b1d218b",
+    "git_dirty": false,
+    "dataset": "eval_set_v1.jsonl",
+    "dataset_sha256": "33cfa30622f3b4c42d86204ae8f00a1aae89793591e8eee5f3d4c7b9a3b08763",
+    "collection": "canada_docs_v1",
+    "k": 5,
+    "answer_model": "claude-haiku-5-5",
+    "judge_model": "claude-haiku-5-5",
+    "answer_prompt_sha256": "f321d36efe9ced7c16beffc61e42fbfd8438912aff507c24e27878ec7f28f771",
+    "judge_prompt_sha256": "83c3c9c7ac0056497ccc5b88a6224dc3c44b04b3e6b05653698dc0d225c21abd",
+    "schema_version": 1,
+    "judge_schema_version": 1,
+    "min_score": 0.3,
+    "prices_as_of": "2026-10-06",
+    "usd_cad": 1.42,
+    "embed_model": "voyage-4",
+    "filters": {
+      "limit": null,
+      "categories": null
+    },
+    "partial": false,
+    "stopped_by_cap": false,
+    "results_dir_reason": null,
+    "counts": {
+      "items": 58,
+      "answer_calls": 57,
+      "answer_cache_hits": 1,
+      "judge_calls": 32,
+      "judge_cache_hits": 1,
+      "judge_errors": 0,
+      "gate_abstentions": 0
+    },
+    "tokens": {
+      "answer": {
+        "input_tokens": 204216,
+        "output_tokens": 18560,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      },
+      "judge": {
+        "input_tokens": 32685,
+        "output_tokens": 2901,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    "cost_cad": {
+      "answers": 0.042176,
+      "judge": 0.006701,
+      "voyage": 0.0,
+      "total": 0.048877
+    },
+    "cost_cad_list": {
+      "answers": 0.042854,
+      "judge": 0.006928,
+      "total": 0.049782
+    },
+    "provenance": {
+      "provenance_version": 1,
+      "run_id": "20261019T133733Z",
+      "created_at": "2026-10-19T13:40:42+00:00",
+      "git": {
+        "sha": "b1d218b",
+        "dirty": false,
+        "diff_sha256": null,
+        "untracked": []
+      },
+      "dataset": {
+        "name": "eval_set_v1.jsonl",
+        "sha256": "33cfa30622f3b4c42d86204ae8f00a1aae89793591e8eee5f3d4c7b9a3b08763"
+      },
+      "corpus": {
+        "manifest_sha256": "cc9c01afbd9ec3e72bbe0dd968c64e75321f4333a6f19d6fa0c307c68f772696",
+        "collection": "canada_docs_v1",
+        "points_count": 735,
+        "embed_model": "voyage-4",
+        "embed_dimension": 1024
+      },
+      "prompts": {
+        "answer_sha256": "f321d36efe9ced7c16beffc61e42fbfd8438912aff507c24e27878ec7f28f771",
+        "judge_sha256": "83c3c9c7ac0056497ccc5b88a6224dc3c44b04b3e6b05653698dc0d225c21abd"
+      },
+      "models": {
+        "answer": {
+          "id": "claude-haiku-5-5",
+          "max_tokens": 500,
+          "thinking": "disabled",
+          "effort": "low"
+        },
+        "judge": {
+          "id": "claude-haiku-5-5",
+          "max_tokens": 500,
+          "thinking": "disabled",
+          "effort": "low"
+        }
+      },
+      "k": 5,
+      "min_score": 0.3,
+      "prompt_caching": false,
+      "schema_version": 1,
+      "judge_schema_version": 1,
+      "usd_cad": 1.42,
+      "prices_as_of": "2026-10-06",
+      "scorer": {
+        "config": {
+          "scorer_version": 1,
+          "atomic_fact_max_words": 6,
+          "fact_content_min_chars": 4,
+          "stopwords": [
+            "also",
+            "been",
+            "being",
+            "could",
+            "does",
+            "doing",
+            "done",
+            "from",
+            "have",
+            "having",
+            "here",
+            "into",
+            "just",
+            "percent",
+            "shall",
+            "should",
+            "that",
+            "their",
+            "theirs",
+            "them",
+            "then",
+            "there",
+            "these",
+            "they",
+            "this",
+            "those",
+            "what",
+            "when",
+            "where",
+            "which",
+            "while",
+            "whom",
+            "whose",
+            "will",
+            "with",
+            "would",
+            "your",
+            "yours",
+            "yourself"
+          ],
+          "number_words": {
+            "one": "1",
+            "two": "2",
+            "three": "3",
+            "four": "4",
+            "five": "5",
+            "six": "6",
+            "seven": "7",
+            "eight": "8",
+            "nine": "9",
+            "ten": "10"
+          }
+        },
+        "sha256": "e55f674fcf9c73a37390ab9c5196e7b85906d29c9654a36a32c32a7c14877416"
+      },
+      "sdk": {
+        "anthropic": "1.12.1",
+        "voyageai": "0.5.0",
+        "qdrant-client": "1.19.1",
+        "pydantic": "2.13.5"
+      }
+    }
+  },
+  "metrics": {
+    "groups": {
+      "single_page": [
+        "single_page"
+      ],
+      "hard": [
+        "multi_page",
+        "confusable",
+        "time_sensitive"
+      ],
+      "abstention": [
+        "unanswerable_out_of_scope",
+        "unanswerable_in_domain"
+      ]
+    },
+    "categories": {
+      "single_page": {
+        "n": 32,
+        "pass_rate": 0.812,
+        "all_facts_rate": 0.875,
+        "mean_facts_fraction": 0.891,
+        "validator_ok_rate": 1.0,
+        "gold_cited_rate": 0.844,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": 0.094,
+        "attribution": {
+          "retrieval_page": 1,
+          "retrieval_chunk": 0,
+          "generation": 5
+        },
+        "fact_methods": {
+          "numbers": 14,
+          "judge": 30,
+          "none": 6
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.027429
+      },
+      "multi_page": {
+        "n": 8,
+        "pass_rate": 0.25,
+        "all_facts_rate": 0.375,
+        "mean_facts_fraction": 0.438,
+        "validator_ok_rate": 1.0,
+        "gold_cited_rate": 0.25,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": 0.5,
+        "attribution": {
+          "retrieval_page": 2,
+          "retrieval_chunk": 0,
+          "generation": 4
+        },
+        "fact_methods": {
+          "numbers": 2,
+          "judge": 6,
+          "none": 8
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.007434
+      },
+      "confusable": {
+        "n": 6,
+        "pass_rate": 0.667,
+        "all_facts_rate": 0.833,
+        "mean_facts_fraction": 0.833,
+        "validator_ok_rate": 1.0,
+        "gold_cited_rate": 0.833,
+        "decoy_cited_rate": 0.167,
+        "false_abstention_rate": 0.167,
+        "attribution": {
+          "retrieval_page": 1,
+          "retrieval_chunk": 0,
+          "generation": 1
+        },
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 5,
+          "none": 1
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.005509
+      },
+      "unanswerable_out_of_scope": {
+        "n": 6,
+        "correct_abstention_rate": 0.667,
+        "abstained_by_gate": 0,
+        "abstained_by_model": 4,
+        "answered_confidently": 2,
+        "validator_ok_rate": 1.0,
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.003619
+      },
+      "unanswerable_in_domain": {
+        "n": 3,
+        "correct_abstention_rate": 0.0,
+        "abstained_by_gate": 0,
+        "abstained_by_model": 0,
+        "answered_confidently": 3,
+        "validator_ok_rate": 1.0,
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.002037
+      },
+      "time_sensitive": {
+        "n": 3,
+        "pass_rate": 0.667,
+        "all_facts_rate": 0.667,
+        "mean_facts_fraction": 0.833,
+        "validator_ok_rate": 1.0,
+        "gold_cited_rate": 1.0,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": 0.0,
+        "attribution": {
+          "retrieval_page": 0,
+          "retrieval_chunk": 0,
+          "generation": 1
+        },
+        "fact_methods": {
+          "numbers": 2,
+          "judge": 3,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.002849
+      }
+    },
+    "overall": {
+      "answerable": {
+        "k": 34,
+        "n": 49,
+        "rate": 0.694,
+        "ci95": [
+          0.555,
+          0.805
+        ]
+      },
+      "macro_pass_rate": 0.599,
+      "abstention_recall": {
+        "k": 4,
+        "n": 9,
+        "rate": 0.444,
+        "ci95": [
+          0.189,
+          0.733
+        ]
+      },
+      "n_items": 58
+    },
+    "by_program": {
+      "cpp": {
+        "n": 11,
+        "pass": {
+          "k": 6,
+          "n": 11,
+          "rate": 0.545,
+          "ci95": [
+            0.28,
+            0.787
+          ]
+        },
+        "mean_facts_fraction": 0.773
+      },
+      "ei": {
+        "n": 14,
+        "pass": {
+          "k": 9,
+          "n": 14,
+          "rate": 0.643,
+          "ci95": [
+            0.388,
+            0.837
+          ]
+        },
+        "mean_facts_fraction": 0.786
+      },
+      "oas": {
+        "n": 8,
+        "pass": {
+          "k": 5,
+          "n": 8,
+          "rate": 0.625,
+          "ci95": [
+            0.306,
+            0.863
+          ]
+        },
+        "mean_facts_fraction": 0.688
+      },
+      "passport": {
+        "n": 7,
+        "pass": {
+          "k": 7,
+          "n": 7,
+          "rate": 1.0,
+          "ci95": [
+            0.646,
+            1.0
+          ]
+        },
+        "mean_facts_fraction": 1.0
+      },
+      "sin": {
+        "n": 10,
+        "pass": {
+          "k": 7,
+          "n": 10,
+          "rate": 0.7,
+          "ci95": [
+            0.397,
+            0.892
+          ]
+        },
+        "mean_facts_fraction": 0.75
+      },
+      "n/a": {
+        "n": 9,
+        "correct_abstention": {
+          "k": 4,
+          "n": 9,
+          "rate": 0.444,
+          "ci95": [
+            0.189,
+            0.733
+          ]
+        }
+      }
+    },
+    "abstention": {
+      "recall": {
+        "k": 4,
+        "n": 9,
+        "rate": 0.444,
+        "ci95": [
+          0.189,
+          0.733
+        ]
+      },
+      "precision": {
+        "k": 4,
+        "n": 4,
+        "rate": 1.0,
+        "ci95": [
+          0.51,
+          1.0
+        ]
+      },
+      "n_should_abstain": 9,
+      "n_intentional": 4,
+      "false_abstentions": 0,
+      "missed": 5,
+      "generation_failures": 8,
+      "by_gate": 0,
+      "by_model": 4
+    },
+    "citation": {
+      "n_eligible": 46,
+      "validity": {
+        "k": 46,
+        "n": 46,
+        "rate": 1.0,
+        "ci95": [
+          0.923,
+          1.0
+        ]
+      },
+      "gold_cited": {
+        "k": 37,
+        "n": 41,
+        "rate": 0.902,
+        "ci95": [
+          0.775,
+          0.961
+        ]
+      },
+      "citation_precision": {
+        "mean": 0.614,
+        "n": 41
+      }
+    },
+    "attribution": {
+      "n_failed_answerable": 15,
+      "retrieval_page": 4,
+      "retrieval_chunk": 0,
+      "generation": 11,
+      "shares": {
+        "retrieval_page": {
+          "k": 4,
+          "n": 15,
+          "rate": 0.267,
+          "ci95": [
+            0.109,
+            0.52
+          ]
+        },
+        "retrieval_chunk": {
+          "k": 0,
+          "n": 15,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.204
+          ]
+        },
+        "generation": {
+          "k": 11,
+          "n": 15,
+          "rate": 0.733,
+          "ci95": [
+            0.48,
+            0.891
+          ]
+        }
+      }
+    }
+  }
+}
