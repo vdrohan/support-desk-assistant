@@ -232,6 +232,8 @@ data/cache/
 # eval drafts, review state, judge review export and per-run output. eval_set_v1.jsonl and results/ are
 # committed; to keep a baseline run, `git add -f data/eval/runs/<file>`.
 data/eval/candidates.jsonl
+data/eval/candidates.before-fixes.jsonl
+data/eval/decisions_*.txt
 data/eval/review_state.json
 data/eval/review.html
 data/eval/judge_review.md
