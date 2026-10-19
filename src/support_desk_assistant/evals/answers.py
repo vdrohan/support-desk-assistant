@@ -688,7 +688,11 @@ def _category_metrics(
             "decoy_cited_rate": (
                 _rate([bool(s.decoy_cited) for s in items]) if category == "confusable" else None
             ),
-            "false_abstention_rate": _rate([s.abstained for s in items]),
+            # Same rule as breakdown._intentional: refusal/max_tokens fallbacks are generation
+            # failures, not false abstentions (decisions.md #23).
+            "false_abstention_rate": _rate(
+                [s.abstained and s.status in (STATUS_OK, STATUS_GATE) for s in items]
+            ),
             "attribution": {a: sum(1 for s in items if s.attribution == a) for a in ATTRIBUTIONS},
         }
     facts = [d for s in items for d in s.facts]
