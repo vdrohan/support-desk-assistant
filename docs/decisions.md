@@ -329,3 +329,14 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - Time-sensitive answers are not checked for stating the date.
   - The Haiku judge shares a model family with the Haiku answerer.
   - The Voyage price (`EmbedSettings.usd_per_mtok`) and `usd_cad` remain placeholders.
+
+## 24. Haiku answer cap raised from 500 to 1000 tokens after the first full run
+
+- **Decision:** `AnswerSettings.models["claude-haiku-5-5"].max_tokens` goes from 500 to 1000. The first full answer run (2026-10-19, run `20261019T133733Z`, committed as run 0) stays in `data/eval/results/` as a record; the re-run with the new cap is the baseline.
+- **Reason:** 8 of the 58 answers stopped at `max_tokens` (3 `single_page`, 4 `multi_page`, 1 `confusable`), which is 8 of the 15 failed answerable items. The pipeline turns a truncated response into a fallback abstention (decision 15), so the scorer counted each as a generation failure. The cached raw responses show the answers themselves were complete and on topic; the cut fell in the trailing JSON (`abstained`, `abstain_reason`) after the answer text and four citation UUIDs. Successful answers had a median of 305 output tokens, a 90th percentile of 442 and a maximum of 496, so 500 left almost no headroom. A cap that clips the output format measures the cap, not the model or the prompt.
+- **Why decision 20's freeze still holds:** the freeze is on the dataset (`eval_set_v1.jsonl`: questions, gold pages, key facts), which does not change. This changes a generation setting. The answer cache key includes `max_tokens` (decision 18), so all 58 answers are regenerated; output is billed on tokens produced, so the higher cap costs more only for answers that were being cut.
+- **Not changed:** the prompt (its sha256 in the provenance stays comparable), the Sonnet profile (4000), retrieval, chunking and the index. The `max_tokens: 600` in `ChunkSettings` is the chunk size, a different setting.
+- **Rejected:**
+  - Keeping run 0 as the baseline and noting the truncation: the baseline would mix model quality with the cap.
+  - Asking the prompt for shorter answers instead: a prompt change confounds the comparison with run 0, and the answers were not rambling. Worth a separate decision if cost or length becomes a concern.
+- **Also fixed:** the per-category "false abstention" column counted any abstained row, including these truncation fallbacks, while the overall table (decision 23) counted only gate and model abstentions. Both now use the decision 23 rule; the run 0 files still show the old category numbers.
