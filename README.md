@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run (answerable pass 0.78, abstention recall 0.44); the judge is not yet calibrated against human labels. The HTTP API doesn't exist yet. See [Roadmap](#roadmap).
+> **Status: Phase 1 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run (answerable pass 0.78, abstention recall 0.44) and a second run after a judge fix (0.82, abstention recall unchanged); the judge is audited against a model re-grade but not yet calibrated against human labels. The HTTP API doesn't exist yet. See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -54,7 +54,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
-A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline (run 1, decisions #24) is there too.
+A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline (run 1, decisions #24) is there too, and run 2 after the judge fix (decisions #25, audit in [docs/judge_audit_run1.md](docs/judge_audit_run1.md)).
 
 ## Corpus
 
