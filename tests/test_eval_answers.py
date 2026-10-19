@@ -11,6 +11,7 @@ from support_desk_assistant.answer.pipeline import (
     GATE_LOW_SCORE,
     GATE_PASS,
     STATUS_GATE,
+    STATUS_MAX_TOKENS,
     STATUS_OK,
     STATUS_REFUSAL,
     gate_abstention,
@@ -320,6 +321,20 @@ def test_false_abstention_fails_and_records_who_abstained(gate, status, result, 
     assert s.abstained and s.abstained_by == by and not s.passed
     assert [d.method for d in s.facts] == ["none"]
     assert s.attribution == "generation"  # page and fact were retrieved
+
+
+def test_category_false_abstention_rate_excludes_incomplete_generations():
+    # A max_tokens fallback sets abstained=True but is a generation failure, not a false
+    # abstention (decisions.md #23); only the gate/model abstention counts.
+    truncated = score(
+        cand(id="sp-1"),
+        answer(abstained=True, reason="cut off"),
+        status=STATUS_MAX_TOKENS,
+    )
+    declined = score(cand(id="sp-2"), answer(abstained=True, reason="not covered"))
+    answered = score(cand(id="sp-3"), answer(GOOD, ["a1"]))
+    sp = aggregate([truncated, declined, answered])["categories"]["single_page"]
+    assert sp["false_abstention_rate"] == 0.333  # 1 of 3; the truncation is excluded
 
 
 def test_failed_generation_decides_facts_none():
