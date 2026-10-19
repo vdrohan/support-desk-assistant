@@ -1,0 +1,13 @@
+title = "support-desk-assistant"
+
+[extend]
+useDefault = true
+
+# Eval result rows carry sha256 cache keys (answer_cache_key, judge_cache_key) that the
+# generic-api-key rule mistakes for secrets. Narrow on purpose: only these two field names.
+[[allowlists]]
+description = "eval result cache keys are content hashes, not credentials"
+regexTarget = "line"
+regexes = ['''"(answer|judge)_cache_key": "[0-9a-f]{64}"''']
+paths = ['''data/eval/results/.*\.jsonl$''']
+condition = "AND"
