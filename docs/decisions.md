@@ -360,3 +360,28 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - *Replay (judge v2, 77 records):* agreement 66/67 = 0.98 [0.92, 1.00], kappa 0.97; false present 1/28 = 0.04 [0.01, 0.18]; false absent 0/39. The one false present is `ev-039~del`: the retained sentence says the user is "about three months past" their last day of work, and the judge infers "more than 4 weeks" from it. That is an implication, which the prompt says does not count, so the label stays absent.
   - *Limits:* these are easy negatives (a whole sentence removed, or a number changed). They show the judge does not wave facts through when nothing relevant is left; they do not test subtle partial mentions or paraphrases that drop one condition. Realistic absent cases from model failures are still missing.
 - **Ablation from a parallel run (added 2026-10-20):** another session made the field reorder alone (no multi-benefit rule) on branch `claude/project-thread-qwep98`, commit 23ad7d0, run `20261019T174456Z`, files committed in `data/eval/results/`. Same 58 cached answers: answerable pass 40/49 = 0.82 [0.69, 0.90]. Adding the multi-benefit prompt rule (run `20261020T132433Z`) gives 41/49 = 0.84. So the reorder is worth +2 items (ev-021, ev-006) and the rule +1 (ev-033); the interval overlap says none of it is distinguishable from noise at n = 49. In that run ev-011[0] flipped to a false "missing" (the reason mixed in the user's own situation); it passes in the later run. The same session's independent audit of run 1 (all 52 judge-decided facts, graded blind by Claude, contested rows reviewed by the maintainer) found the same four judge errors as the calibration here: [docs/judge_audit_run1.md](judge_audit_run1.md).
+
+## 26. Abstention: decide before writing (answer schema field order), eval set v2
+
+- **Decision:** `AnswerResult` fields are generated in the order `abstained`, `abstain_reason`, `answer`, `citations` (was `answer`, `citations`, `abstained`, `abstain_reason`); `AnswerSettings.schema_version` goes 1 -> 2. The answer prompt's abstain rule now says related information that does not answer the question does not count, and its partial-answer rule applies only when at least one part of the question is answered; if none is, abstain without filler. `data/eval/eval_set_v2.jsonl` relabels two v1 items (ev-030, ev-031) from `unanswerable_in_domain` to `single_page`. v1 is unchanged.
+- **Reason:** run 2 had abstention recall 4 of 9. Reading the five misses: ev-027, ev-029 and ev-057 opened with "The documents do not describe/say…" and then added related material with `abstained: false`. Structured output is generated in schema order, so the model wrote the answer prose before it decided whether to abstain, the same flaw as the judge in decision 25. ev-030 and ev-031 were labelling errors: the documents do answer them (automatic GIS enrollment with a letter after the 64th birthday; "use the calculator separately"), and ev-030's v1 note described a different question.
+- **Measured one change at a time (same 58 questions, answers regenerated each time):**
+
+| run | change | answerable pass | abstention recall |
+|---|---|---|---|
+| 20261020T132433Z (run 2) | none (baseline) | 41/49 = 0.84 | 4/9 = 0.44 |
+| 20261020T184743Z (run 3) | prompt rules only | 40/49 = 0.82 | 4/9 = 0.44 |
+| 20261020T185226Z (run 4) | + schema order | 41/49 = 0.84 | 7/9 = 0.78 [0.45, 0.94] |
+| 20261020T185710Z (run 5, v2 labels) | same answers, ev-030/031 relabelled | 42/51 = 0.82 | 7/7 = 1.00 [0.65, 1.00] |
+
+  - The prompt wording alone did nothing: the same five items stayed answered. The order change flipped exactly ev-027, ev-029 and ev-057 to abstentions, with no false abstentions on answerable items (0 in every run) and the answerable pass rate unchanged.
+  - Run 3 -> run 4 also shows judge/answer noise: ev-033 failed in run 3 and passed in run 4 with a different answer text. Differences of one item are not distinguishable from noise at this n.
+  - Run 5 re-scores run 4's cached answers; only ev-030 and ev-031 are scored differently. ev-030 fails under v2 because the judge marks "you'll get a letter shortly after your 64th birthday" absent (the answer places the letter at the 64th birthday, without "shortly after"). That key fact was written for v2 before the run and is left as is.
+- **Limits:**
+  - In-sample: the change was designed by reading these five items, and the three that flipped are those items. 7 of 7 has a 95% interval of [0.65, 1.00]. No held-out unanswerable questions were run.
+  - Precision is 7 of 7 on this set; false abstentions on answerable questions were 0 of 49 (51 in v2), but this set has few borderline answerable questions.
+  - v1 stays the dataset with published results; use v2 labels (`SDA_EVAL__EVAL_SET_FILE=eval_set_v2.jsonl`) for new comparisons, and do not compare a v2 pass rate with a v1 one directly (51 vs 49 answerable items).
+- **Rejected:**
+  - A post-hoc string check on "the documents do not say…" openings: brittle, and it would hide the model's decision instead of fixing it.
+  - Turning thinking on for the answer model: more cost on every call; reordering addresses the observed failure.
+  - A retrieval-score threshold: the best out-of-corpus score is 0.525 and some in-domain misses score higher than answerable questions (retrieval eval, 2026-10-08).
