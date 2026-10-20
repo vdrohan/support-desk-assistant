@@ -113,6 +113,37 @@ class TriageSettings(BaseModel):
     page_size_max: int = 100
 
 
+class TriageEvalSettings(BaseModel):
+    """Triage eval (docs/decisions.md #28). Datasets are versioned files under ``data/eval/``;
+    never edit one that has published results, add ``_v2``."""
+
+    draft_model: str = "claude-haiku-5-5"
+    draft_max_tokens: int = 2500
+    draft_prompt_path: Path = Path("prompts/triage_draft.md")
+    draft_seed: int = 20261020
+    draft_per_cell: int = 3  # tickets per (queue, priority) for the five programs
+    draft_per_cell_other: int = 2  # tickets per priority for the "other" queue
+    draft_schema_version: int = 1
+    draft_titles_per_task: int = 6  # page titles shown as topic hints
+    other_topics: list[str] = [
+        "income tax return or tax refund",
+        "provincial health card or health insurance",
+        "driver's licence or provincial ID",
+        "immigration, visas or permanent resident card",
+        "citizenship application",
+        "provincial social assistance or welfare",
+        "child benefit or other tax-based benefit",
+        "student loans or tuition",
+        "a business licence or small business grant",
+        "a greeting or test message with no request",
+    ]
+    candidates_file: str = "triage_candidates.jsonl"
+    review_state_file: str = "triage_review_state.json"
+    review_html_file: str = "triage_review.html"
+    set_file: str = "triage_set_v1.jsonl"
+    spend_cap_cad: float = 0.25
+
+
 class EvalSettings(BaseModel):
     """Retrieval eval (docs/decisions.md #12). Datasets are versioned files under
     ``data/eval/``; never edit one that has published results, add ``_v2``."""
@@ -262,10 +293,27 @@ class Settings(BaseSettings):
     answer: AnswerSettings = AnswerSettings()
     api: ApiSettings = ApiSettings()
     triage: TriageSettings = TriageSettings()
+    triage_eval: TriageEvalSettings = TriageEvalSettings()
 
     @property
     def triage_cache_dir(self) -> Path:
         return self.data_dir / "cache" / "triage"
+
+    @property
+    def triage_candidates_path(self) -> Path:
+        return self.eval_dir / self.triage_eval.candidates_file
+
+    @property
+    def triage_review_state_path(self) -> Path:
+        return self.eval_dir / self.triage_eval.review_state_file
+
+    @property
+    def triage_review_html_path(self) -> Path:
+        return self.eval_dir / self.triage_eval.review_html_file
+
+    @property
+    def triage_set_path(self) -> Path:
+        return self.eval_dir / self.triage_eval.set_file
 
     @property
     def tickets_db_path(self) -> Path:
