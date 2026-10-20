@@ -54,7 +54,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
-A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it.
+A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it. A reorder-only run (2a) and an independent audit of run 1 are in [docs/judge_audit_run1.md](docs/judge_audit_run1.md).
 
 ## Corpus
 
