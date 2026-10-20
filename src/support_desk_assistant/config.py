@@ -98,6 +98,21 @@ class ApiSettings(BaseModel):
     max_k: int = 20
 
 
+class TriageSettings(BaseModel):
+    """Ticket triage (docs/decisions.md #28). The model's profile (effort, thinking, prices)
+    comes from ``AnswerSettings.models``."""
+
+    model: str = "claude-haiku-5-5"
+    max_tokens: int = 400
+    system_prompt_path: Path = Path("prompts/triage.md")
+    # Bump when TriageResult or the prompt layout changes (part of the response-cache key).
+    schema_version: int = 1
+    max_ticket_chars: int = 4000
+    max_subject_chars: int = 200
+    db_file: str = "tickets.sqlite"
+    page_size_max: int = 100
+
+
 class EvalSettings(BaseModel):
     """Retrieval eval (docs/decisions.md #12). Datasets are versioned files under
     ``data/eval/``; never edit one that has published results, add ``_v2``."""
@@ -246,6 +261,15 @@ class Settings(BaseSettings):
     eval: EvalSettings = EvalSettings()
     answer: AnswerSettings = AnswerSettings()
     api: ApiSettings = ApiSettings()
+    triage: TriageSettings = TriageSettings()
+
+    @property
+    def triage_cache_dir(self) -> Path:
+        return self.data_dir / "cache" / "triage"
+
+    @property
+    def tickets_db_path(self) -> Path:
+        return self.data_dir / self.triage.db_file
 
     @property
     def raw_dir(self) -> Path:

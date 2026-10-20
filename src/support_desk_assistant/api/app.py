@@ -15,8 +15,10 @@ from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedR
 from voyageai.error import VoyageError
 
 from support_desk_assistant.answer.pipeline import Outcome, SystemPromptNotReady, execute, prepare
+from support_desk_assistant.api.tickets import TriageFn, add_ticket_routes
 from support_desk_assistant.config import Settings, get_settings
 from support_desk_assistant.ingest.embed import Embedder, make_voyage_client
+from support_desk_assistant.triage.store import TicketStore
 
 STATUS_VALIDATION_FAILED = "validation_failed"
 VALIDATION_FAILED_REASON = "I could not verify the sources for this answer, so I am not showing it."
@@ -102,7 +104,12 @@ def to_response(outcome: Outcome) -> AskResponse:
     )
 
 
-def create_app(settings: Settings | None = None, ask_fn: AskFn | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    ask_fn: AskFn | None = None,
+    triage_fn: TriageFn | None = None,
+    store: TicketStore | None = None,
+) -> FastAPI:
     settings = settings or get_settings()
     ask = ask_fn or make_ask_fn(settings)
     app = FastAPI(title="support-desk-assistant", version="0.1.0")
@@ -131,4 +138,5 @@ def create_app(settings: Settings | None = None, ask_fn: AskFn | None = None) ->
         except (anthropic.APIError, VoyageError) as exc:
             raise HTTPException(502, "upstream model service error") from exc
 
+    add_ticket_routes(app, settings, triage_fn=triage_fn, store=store)
     return app
