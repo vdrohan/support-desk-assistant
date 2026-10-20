@@ -75,7 +75,7 @@ data/
   manifest.jsonl # committed corpus definition: url, title, program, dates, hash
   raw/           # cached HTML (gitignored)
   processed/     # extracted Markdown (gitignored)
-  eval/          # eval datasets (planned, Phase 1)
+  eval/          # versioned eval datasets, judge calibration labels, committed results
 tests/           # pytest, offline (no live network)
 ```
 
@@ -143,6 +143,10 @@ uv run sda-eval-answers --calibrate --yes # make the uncached judge calls (costs
 Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and retrieves every question). Runs with `--yes` call Claude and cost money; `EvalSettings.spend_cap_cad` (override with `--cap`) is checked before the run and before each item. Each run writes `answers_<collection>_<model>_<run_id>.{jsonl,summary.json,md}`. Partial runs, and full runs from a dirty working tree, go to the gitignored `data/eval/runs/`; `--allow-dirty` writes the latter to `results/`. Scoring rules: [decisions #21](docs/decisions.md#21-answer-scoring-number-gate-plus-judge-per-category-report-capped-dry-run-first-runner); breakdowns, provenance and calibration: [decisions #23](docs/decisions.md#23-answer-eval-runner-overall-rows-abstention-and-citation-metrics-provenance-hard-cap-blind-judge-calibration).
 
 There's no API to run yet.
+
+## Disclaimer
+
+This is an independent portfolio and research project. It is not affiliated with or endorsed by the Government of Canada, and its answers are not legal, financial or benefits advice. Answers can be wrong or out of date: check the official canada.ca page. The corpus text belongs to the Government of Canada (see [Corpus](#corpus)); the code is MIT-licensed.
 
 ## License
 
