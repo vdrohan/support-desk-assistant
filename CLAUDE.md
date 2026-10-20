@@ -7,7 +7,7 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
 
 - `src/support_desk_assistant/`: the installable package (uv_build, src layout)
   - `config.py`: the **only** place for config values (pydantic-settings; override with `SDA_*` env vars)
-  - `api/`: FastAPI app
+  - `api/`: FastAPI app (`app.py`: `create_app`, `POST /ask`, `GET /health`; `__main__.py` is `sda-api`)
   - `ingest/`: `crawl.py` → `chunk.py` → `embed.py` → `index.py` (Qdrant sync); `__main__.py` is `sda-ingest`
   - `retrieve.py`: `search()` and the `sda-search` CLI
   - `evals/`: eval harness (named `evals`, not `eval`, so it doesn't shadow the builtin); `retrieval.py` is `sda-eval-retrieval`
@@ -33,6 +33,7 @@ uv run pytest                    # tests
 uv run python -m support_desk_assistant.ingest.crawl [--program ei] [--refresh]
 uv run sda-ingest [--program ei] [--dry-run]   # chunk -> embed -> index (needs the Qdrant tunnel)
 uv run sda-search "question" [--program ei] [-k 5]
+uv run sda-api                   # serve POST /ask on 127.0.0.1:8000 (needs the Qdrant tunnel and both API keys)
 uv run sda-eval-retrieval [--validate] [--collection X] [-k 5]
 uv run sda-eval-draft [--dry-run] [--yes] [--force] [--seed N] [--out FILE]   # Claude API, costs money (mock in tests)
 uv run sda-eval-review [--status | --export | --apply FILE] [--category C]   # offline

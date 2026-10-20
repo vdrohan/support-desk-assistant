@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), so a human review is still pending. The HTTP API doesn't exist yet. See [Roadmap](#roadmap).
+> **Status: Phase 1 done, Phase 2 next.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), so a human review is still pending. `POST /ask` serves the same pipeline over HTTP (`sda-api`). See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -50,7 +50,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | Phase | Scope | Status |
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
-| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels, human review and absent-fact labels pending), then `/ask` endpoint | 🚧 in progress |
+| 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels, human review and absent-fact labels pending), `/ask` endpoint (`sda-api`) ✅ | ✅ done |
 | 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
@@ -142,7 +142,15 @@ uv run sda-eval-answers --calibrate --yes # make the uncached judge calls (costs
 
 Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and retrieves every question). Runs with `--yes` call Claude and cost money; `EvalSettings.spend_cap_cad` (override with `--cap`) is checked before the run and before each item. Each run writes `answers_<collection>_<model>_<run_id>.{jsonl,summary.json,md}`. Partial runs, and full runs from a dirty working tree, go to the gitignored `data/eval/runs/`; `--allow-dirty` writes the latter to `results/`. Scoring rules: [decisions #21](docs/decisions.md#21-answer-scoring-number-gate-plus-judge-per-category-report-capped-dry-run-first-runner); breakdowns, provenance and calibration: [decisions #23](docs/decisions.md#23-answer-eval-runner-overall-rows-abstention-and-citation-metrics-provenance-hard-cap-blind-judge-calibration).
 
-There's no API to run yet.
+### Run the API
+
+```bash
+uv run sda-api                       # http://127.0.0.1:8000, needs Qdrant, VOYAGE_API_KEY and ANTHROPIC_API_KEY
+curl -s localhost:8000/ask -H 'content-type: application/json' \
+  -d '{"question": "How many weeks of EI sickness benefits can I get?", "program": "ei"}'
+```
+
+`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `GET /health` is a liveness check. The API has no authentication and binds to `127.0.0.1` (`ApiSettings`); don't expose it without putting auth in front. Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only).
 
 ## Disclaimer
 

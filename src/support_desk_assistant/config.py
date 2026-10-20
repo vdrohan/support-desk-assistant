@@ -89,6 +89,15 @@ class RetrievalSettings(BaseModel):
     top_k: int = 5
 
 
+class ApiSettings(BaseModel):
+    """HTTP API (docs/decisions.md #27). Binds to loopback by default; there is no auth."""
+
+    host: str = "127.0.0.1"
+    port: int = 8000
+    max_question_chars: int = 1000
+    max_k: int = 20
+
+
 class EvalSettings(BaseModel):
     """Retrieval eval (docs/decisions.md #12). Datasets are versioned files under
     ``data/eval/``; never edit one that has published results, add ``_v2``."""
@@ -236,6 +245,7 @@ class Settings(BaseSettings):
     retrieval: RetrievalSettings = RetrievalSettings()
     eval: EvalSettings = EvalSettings()
     answer: AnswerSettings = AnswerSettings()
+    api: ApiSettings = ApiSettings()
 
     @property
     def raw_dir(self) -> Path:
