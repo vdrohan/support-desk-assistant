@@ -9,6 +9,7 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
   - `config.py`: the **only** place for config values (pydantic-settings; override with `SDA_*` env vars)
   - `api/`: FastAPI app (`app.py`: `create_app`, `POST /ask`, `GET /health`; `__main__.py` is `sda-api`)
   - `ingest/`: `crawl.py` → `chunk.py` → `embed.py` → `index.py` (Qdrant sync); `__main__.py` is `sda-ingest`
+  - `triage/`: `schema.py` (queue, priority, `TriageResult`), `pipeline.py` (`triage_ticket`), `store.py` (SQLite `TicketStore`); routes in `api/tickets.py`
   - `retrieve.py`: `search()` and the `sda-search` CLI
   - `evals/`: eval harness (named `evals`, not `eval`, so it doesn't shadow the builtin); `retrieval.py` is `sda-eval-retrieval`
     - `draft_questions.py`: `sda-eval-draft`, Haiku drafts candidate questions
@@ -17,6 +18,9 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
     - `stats.py`: Wilson interval, confusion counts, Cohen's kappa
     - `breakdown.py`: overall, by program, abstention, citation and failure-attribution rows
     - `provenance.py`: reproducibility block recorded with every answer-eval run
+    - `triage_draft.py`: `sda-eval-triage-draft`, Haiku drafts candidate tickets
+    - `triage_review.py`: `sda-eval-triage-review`, offline phone review page and `--apply`
+    - `triage.py`: `sda-eval-triage`, scores the triage classifier on `data/eval/triage_set_v1.jsonl`
     - `calibrate.py`: blind-sheet label import and judge vs human agreement
 - `tests/`: pytest; fixtures in `tests/fixtures/`. No live network in tests: use `httpx.MockTransport`, `tests/fakes.py` (fake Voyage) and `QdrantClient(":memory:")`
 - `data/manifest.jsonl`: committed corpus definition. Gitignored: `data/raw/`, `data/processed/`, `data/chunks.jsonl`, `data/cache/` (embedding cache)
@@ -33,6 +37,9 @@ uv run pytest                    # tests
 uv run python -m support_desk_assistant.ingest.crawl [--program ei] [--refresh]
 uv run sda-ingest [--program ei] [--dry-run]   # chunk -> embed -> index (needs the Qdrant tunnel)
 uv run sda-search "question" [--program ei] [-k 5]
+uv run sda-eval-triage-draft [--yes] [--force]   # Claude API, costs money; dry run by default
+uv run sda-eval-triage-review [--status | --export | --apply FILE]   # offline
+uv run sda-eval-triage [--yes] [--limit N]   # dry run by default; --yes calls Claude (capped)
 uv run sda-api                   # serve POST /ask on 127.0.0.1:8000 (needs the Qdrant tunnel and both API keys)
 uv run sda-eval-retrieval [--validate] [--collection X] [-k 5]
 uv run sda-eval-draft [--dry-run] [--yes] [--force] [--seed N] [--out FILE]   # Claude API, costs money (mock in tests)
