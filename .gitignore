@@ -245,3 +245,6 @@ data/eval/runs/
 # request log (answer pipeline)
 logs/
 .vscode/
+
+# ticket store (docs/decisions.md #28): holds whatever users typed
+data/tickets.sqlite*
