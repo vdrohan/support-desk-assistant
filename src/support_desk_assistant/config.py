@@ -203,7 +203,7 @@ class AnswerSettings(BaseModel):
     prompt_caching: bool = False
     system_prompt_path: Path = Path("prompts/answer_system.md")
     # Bump when AnswerResult or the prompt layout changes (part of the response-cache key).
-    schema_version: int = 1
+    schema_version: int = 2  # 2: abstained first (decisions.md #26)
     max_retries: int = 2
     timeout_s: float = 60.0
     smoke_questions: list[str] = [

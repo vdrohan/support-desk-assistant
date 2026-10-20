@@ -9,10 +9,12 @@ from pydantic import BaseModel, ConfigDict
 class AnswerResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    answer: str
-    citations: list[str]  # chunk_ids from the retrieved set
+    # Generated in this order. The abstain decision comes first so the model commits to it
+    # before it writes any prose (decisions.md #26).
     abstained: bool
     abstain_reason: str | None
+    answer: str
+    citations: list[str]  # chunk_ids from the retrieved set
 
 
 def output_schema() -> dict[str, Any]:

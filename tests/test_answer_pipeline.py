@@ -311,9 +311,10 @@ def test_cache_key_is_stable_and_sensitive_to_every_input(settings, tmp_path, st
         changed(effort="medium"),
         changed(thinking="adaptive"),
     }
-    settings.answer.schema_version = 2
+    original_version = settings.answer.schema_version
+    settings.answer.schema_version = original_version + 1
     keys.add(_key(settings))
-    settings.answer.schema_version = 1
+    settings.answer.schema_version = original_version
     (tmp_path / "prompt.md").write_text("A different system prompt.\n")
     keys.add(_key(settings))
     (tmp_path / "prompt.md").write_text("You answer from the chunks only.\n")
