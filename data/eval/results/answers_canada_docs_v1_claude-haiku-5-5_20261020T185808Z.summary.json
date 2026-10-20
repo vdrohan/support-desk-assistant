@@ -1,0 +1,421 @@
+{
+  "meta": {
+    "run_id": "20261020T185808Z",
+    "created_at": "2026-10-20T18:58:21+00:00",
+    "git_sha": "9598eee",
+    "git_dirty": false,
+    "dataset": "probes_out_of_scope_v1.jsonl",
+    "dataset_sha256": "6021767b285c6f9897e2fa8458fbd5158f391d530ec379e929c52a744060eb57",
+    "collection": "canada_docs_v1",
+    "k": 5,
+    "answer_model": "claude-haiku-5-5",
+    "judge_model": "claude-haiku-5-5",
+    "answer_prompt_sha256": "e946cb25147eca8742e76af32e1dfdbef7665813cb24381aee9faa73a253ba37",
+    "judge_prompt_sha256": "7e5e396138a606e98879f4f37d1ba0ddcf127e2a2f0310dca9c1c33b5357a77e",
+    "schema_version": 2,
+    "judge_schema_version": 2,
+    "min_score": 0.3,
+    "prices_as_of": "2026-10-06",
+    "usd_cad": 1.42,
+    "embed_model": "voyage-4",
+    "filters": {
+      "limit": null,
+      "categories": null
+    },
+    "partial": false,
+    "stopped_by_cap": false,
+    "results_dir_reason": null,
+    "counts": {
+      "items": 10,
+      "answer_calls": 9,
+      "answer_cache_hits": 0,
+      "judge_calls": 0,
+      "judge_cache_hits": 0,
+      "judge_errors": 0,
+      "gate_abstentions": 1
+    },
+    "tokens": {
+      "answer": {
+        "input_tokens": 30968,
+        "output_tokens": 1004,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      },
+      "judge": {
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0
+      }
+    },
+    "cost_cad": {
+      "answers": 0.00511,
+      "judge": 0.0,
+      "voyage": 9e-06,
+      "total": 0.005119
+    },
+    "cost_cad_list": {
+      "answers": 0.00511,
+      "judge": 0.0,
+      "total": 0.00511
+    },
+    "provenance": {
+      "provenance_version": 1,
+      "run_id": "20261020T185808Z",
+      "created_at": "2026-10-20T18:58:21+00:00",
+      "git": {
+        "sha": "9598eee",
+        "dirty": false,
+        "diff_sha256": null,
+        "untracked": []
+      },
+      "dataset": {
+        "name": "probes_out_of_scope_v1.jsonl",
+        "sha256": "6021767b285c6f9897e2fa8458fbd5158f391d530ec379e929c52a744060eb57"
+      },
+      "corpus": {
+        "manifest_sha256": "cc9c01afbd9ec3e72bbe0dd968c64e75321f4333a6f19d6fa0c307c68f772696",
+        "collection": "canada_docs_v1",
+        "points_count": 735,
+        "embed_model": "voyage-4",
+        "embed_dimension": 1024
+      },
+      "prompts": {
+        "answer_sha256": "e946cb25147eca8742e76af32e1dfdbef7665813cb24381aee9faa73a253ba37",
+        "judge_sha256": "7e5e396138a606e98879f4f37d1ba0ddcf127e2a2f0310dca9c1c33b5357a77e"
+      },
+      "models": {
+        "answer": {
+          "id": "claude-haiku-5-5",
+          "max_tokens": 1000,
+          "thinking": "disabled",
+          "effort": "low"
+        },
+        "judge": {
+          "id": "claude-haiku-5-5",
+          "max_tokens": 1000,
+          "thinking": "disabled",
+          "effort": "low"
+        }
+      },
+      "k": 5,
+      "min_score": 0.3,
+      "prompt_caching": false,
+      "schema_version": 2,
+      "judge_schema_version": 2,
+      "usd_cad": 1.42,
+      "prices_as_of": "2026-10-06",
+      "scorer": {
+        "config": {
+          "scorer_version": 1,
+          "atomic_fact_max_words": 6,
+          "fact_content_min_chars": 4,
+          "stopwords": [
+            "also",
+            "been",
+            "being",
+            "could",
+            "does",
+            "doing",
+            "done",
+            "from",
+            "have",
+            "having",
+            "here",
+            "into",
+            "just",
+            "percent",
+            "shall",
+            "should",
+            "that",
+            "their",
+            "theirs",
+            "them",
+            "then",
+            "there",
+            "these",
+            "they",
+            "this",
+            "those",
+            "what",
+            "when",
+            "where",
+            "which",
+            "while",
+            "whom",
+            "whose",
+            "will",
+            "with",
+            "would",
+            "your",
+            "yours",
+            "yourself"
+          ],
+          "number_words": {
+            "one": "1",
+            "two": "2",
+            "three": "3",
+            "four": "4",
+            "five": "5",
+            "six": "6",
+            "seven": "7",
+            "eight": "8",
+            "nine": "9",
+            "ten": "10"
+          }
+        },
+        "sha256": "e55f674fcf9c73a37390ab9c5196e7b85906d29c9654a36a32c32a7c14877416"
+      },
+      "sdk": {
+        "anthropic": "1.12.1",
+        "voyageai": "0.5.0",
+        "qdrant-client": "1.19.1",
+        "pydantic": "2.13.5"
+      }
+    }
+  },
+  "metrics": {
+    "groups": {
+      "single_page": [
+        "single_page"
+      ],
+      "hard": [
+        "multi_page",
+        "confusable",
+        "time_sensitive"
+      ],
+      "abstention": [
+        "unanswerable_out_of_scope",
+        "unanswerable_in_domain"
+      ]
+    },
+    "categories": {
+      "single_page": {
+        "n": 0,
+        "pass_rate": null,
+        "all_facts_rate": null,
+        "mean_facts_fraction": null,
+        "validator_ok_rate": null,
+        "gold_cited_rate": null,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": null,
+        "attribution": {
+          "retrieval_page": 0,
+          "retrieval_chunk": 0,
+          "generation": 0
+        },
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0
+      },
+      "multi_page": {
+        "n": 0,
+        "pass_rate": null,
+        "all_facts_rate": null,
+        "mean_facts_fraction": null,
+        "validator_ok_rate": null,
+        "gold_cited_rate": null,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": null,
+        "attribution": {
+          "retrieval_page": 0,
+          "retrieval_chunk": 0,
+          "generation": 0
+        },
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0
+      },
+      "confusable": {
+        "n": 0,
+        "pass_rate": null,
+        "all_facts_rate": null,
+        "mean_facts_fraction": null,
+        "validator_ok_rate": null,
+        "gold_cited_rate": null,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": null,
+        "attribution": {
+          "retrieval_page": 0,
+          "retrieval_chunk": 0,
+          "generation": 0
+        },
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0
+      },
+      "unanswerable_out_of_scope": {
+        "n": 10,
+        "correct_abstention_rate": 0.9,
+        "abstained_by_gate": 1,
+        "abstained_by_model": 8,
+        "answered_confidently": 1,
+        "validator_ok_rate": 1.0,
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0.00511
+      },
+      "unanswerable_in_domain": {
+        "n": 0,
+        "correct_abstention_rate": null,
+        "abstained_by_gate": 0,
+        "abstained_by_model": 0,
+        "answered_confidently": 0,
+        "validator_ok_rate": null,
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0
+      },
+      "time_sensitive": {
+        "n": 0,
+        "pass_rate": null,
+        "all_facts_rate": null,
+        "mean_facts_fraction": null,
+        "validator_ok_rate": null,
+        "gold_cited_rate": null,
+        "decoy_cited_rate": null,
+        "false_abstention_rate": null,
+        "attribution": {
+          "retrieval_page": 0,
+          "retrieval_chunk": 0,
+          "generation": 0
+        },
+        "fact_methods": {
+          "numbers": 0,
+          "judge": 0,
+          "none": 0
+        },
+        "judge_errors": 0,
+        "cost_cad": 0
+      }
+    },
+    "overall": {
+      "answerable": {
+        "k": 0,
+        "n": 0,
+        "rate": null,
+        "ci95": null
+      },
+      "macro_pass_rate": null,
+      "abstention_recall": {
+        "k": 9,
+        "n": 10,
+        "rate": 0.9,
+        "ci95": [
+          0.596,
+          0.982
+        ]
+      },
+      "n_items": 10
+    },
+    "by_program": {
+      "n/a": {
+        "n": 10,
+        "correct_abstention": {
+          "k": 9,
+          "n": 10,
+          "rate": 0.9,
+          "ci95": [
+            0.596,
+            0.982
+          ]
+        }
+      }
+    },
+    "abstention": {
+      "recall": {
+        "k": 9,
+        "n": 10,
+        "rate": 0.9,
+        "ci95": [
+          0.596,
+          0.982
+        ]
+      },
+      "precision": {
+        "k": 9,
+        "n": 9,
+        "rate": 1.0,
+        "ci95": [
+          0.701,
+          1.0
+        ]
+      },
+      "n_should_abstain": 10,
+      "n_intentional": 9,
+      "false_abstentions": 0,
+      "missed": 1,
+      "generation_failures": 0,
+      "by_gate": 1,
+      "by_model": 8
+    },
+    "citation": {
+      "n_eligible": 1,
+      "validity": {
+        "k": 1,
+        "n": 1,
+        "rate": 1.0,
+        "ci95": [
+          0.207,
+          1.0
+        ]
+      },
+      "gold_cited": {
+        "k": 0,
+        "n": 0,
+        "rate": null,
+        "ci95": null
+      },
+      "citation_precision": {
+        "mean": null,
+        "n": 0
+      }
+    },
+    "attribution": {
+      "n_failed_answerable": 0,
+      "retrieval_page": 0,
+      "retrieval_chunk": 0,
+      "generation": 0,
+      "shares": {
+        "retrieval_page": {
+          "k": 0,
+          "n": 0,
+          "rate": null,
+          "ci95": null
+        },
+        "retrieval_chunk": {
+          "k": 0,
+          "n": 0,
+          "rate": null,
+          "ci95": null
+        },
+        "generation": {
+          "k": 0,
+          "n": 0,
+          "rate": null,
+          "ci95": null
+        }
+      }
+    }
+  }
+}
