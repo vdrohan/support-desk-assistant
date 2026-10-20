@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 done, Phase 2 next.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), so a human review is still pending. `POST /ask` serves the same pipeline over HTTP (`sda-api`). See [Roadmap](#roadmap).
+> **Status: Phase 1 done, Phase 2 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), so a human review is still pending. `POST /ask` serves the same pipeline over HTTP (`sda-api`). See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -51,7 +51,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
 | 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels, human review and absent-fact labels pending), `/ask` endpoint (`sda-api`) ✅ | ✅ done |
-| 2 | Triage layer: ticket classification and priority, SQLite storage, triage eval | planned |
+| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval set (drafted, awaiting human review) and `sda-eval-triage` runner ✅, first triage scores pending the reviewed set | 🚧 in progress |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
 A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it. A reorder-only run (2a) and an independent audit of run 1 are in [docs/judge_audit_run1.md](docs/judge_audit_run1.md).
@@ -68,7 +68,8 @@ src/support_desk_assistant/
   api/           # FastAPI app
   ingest/        # crawl, chunk, embed, index (sda-ingest)
   retrieve.py    # vector search (sda-search)
-  evals/         # eval harness
+  triage/        # ticket triage: schema, pipeline, SQLite store
+  evals/         # eval harness (answers, retrieval, triage)
 docs/            # decisions and, later, the write-up
 compose.yaml     # Qdrant
 data/
@@ -142,6 +143,17 @@ uv run sda-eval-answers --calibrate --yes # make the uncached judge calls (costs
 
 Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and retrieves every question). Runs with `--yes` call Claude and cost money; `EvalSettings.spend_cap_cad` (override with `--cap`) is checked before the run and before each item. Each run writes `answers_<collection>_<model>_<run_id>.{jsonl,summary.json,md}`. Partial runs, and full runs from a dirty working tree, go to the gitignored `data/eval/runs/`; `--allow-dirty` writes the latter to `results/`. Scoring rules: [decisions #21](docs/decisions.md#21-answer-scoring-number-gate-plus-judge-per-category-report-capped-dry-run-first-runner); breakdowns, provenance and calibration: [decisions #23](docs/decisions.md#23-answer-eval-runner-overall-rows-abstention-and-citation-metrics-provenance-hard-cap-blind-judge-calibration).
 
+### Triage tickets
+
+```bash
+uv run sda-eval-triage-draft --yes          # Haiku drafts ~68 candidate tickets (about CA$0.05)
+uv run sda-eval-triage-review --export      # phone page: keep or change each queue/priority, accept or reject
+uv run sda-eval-triage-review --apply FILE  # record the copied decisions into data/eval/triage_set_v1.jsonl
+uv run sda-eval-triage                      # dry run; --yes scores the classifier (queue and priority accuracy, urgent recall)
+```
+
+A ticket is triaged into one queue (`ei`, `cpp`, `oas`, `sin`, `passport`, `other`) and one priority (`urgent`, `high`, `normal`, `low`); the rules are in [prompts/triage.md](prompts/triage.md). Tickets are free text and can contain personal information: the SQLite store (`data/tickets.sqlite`, gitignored) keeps them as typed and they are sent to the Anthropic API, so don't put real SINs or passport numbers in them.
+
 ### Run the API
 
 ```bash
@@ -150,7 +162,7 @@ curl -s localhost:8000/ask -H 'content-type: application/json' \
   -d '{"question": "How many weeks of EI sickness benefits can I get?", "program": "ei"}'
 ```
 
-`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `GET /health` is a liveness check. The API has no authentication and binds to `127.0.0.1` (`ApiSettings`); don't expose it without putting auth in front. Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only).
+`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `POST /tickets` (`subject`, `body`) triages a ticket, stores it and returns its queue, priority and rationale; `GET /tickets/{id}` and `GET /tickets?queue=&priority=` read them back. `GET /health` is a liveness check. The API has no authentication and binds to `127.0.0.1` (`ApiSettings`); don't expose it without putting auth in front. Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only).
 
 ## Disclaimer
 
