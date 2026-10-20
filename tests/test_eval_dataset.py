@@ -45,3 +45,14 @@ def test_unanswerable_items_have_neither(items):
     for i in items:
         if not i["answerable"]:
             assert not i["key_facts"] and not i["gold_urls"], i["id"]
+
+
+def test_v2_differs_from_v1_only_in_the_two_relabelled_items():
+    v2_path = EVAL_SET.with_name("eval_set_v2.jsonl")
+    v1 = {json.loads(line)["id"]: json.loads(line) for line in EVAL_SET.read_text().splitlines()}
+    v2 = {json.loads(line)["id"]: json.loads(line) for line in v2_path.read_text().splitlines()}
+    assert v1.keys() == v2.keys()
+    assert {i for i in v1 if v1[i] != v2[i]} == {"ev-030", "ev-031"}
+    for i in ("ev-030", "ev-031"):
+        assert v1[i]["category"] == "unanswerable_in_domain"
+        assert v2[i]["category"] == "single_page" and v2[i]["answerable"] and v2[i]["key_facts"]
