@@ -404,3 +404,24 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - Returning unvalidated answers with a warning flag: callers would ignore the flag.
   - Async clients throughout: the pipeline and its tests are synchronous; threads give concurrency without a rewrite.
   - A Dockerfile now: the deployment plan is Phase 3 and the API is not exposed yet (README roadmap).
+
+## 28. Ticket triage: queue and priority, labels defined in the prompt, tickets drafted by Haiku and reviewed by a person
+
+- **Decision:**
+  - Output per ticket: `queue` (`ei`, `cpp`, `oas`, `sin`, `passport`, `other`) and `priority` (`urgent`, `high`, `normal`, `low`). Not intent, not routing beyond the queue: escalation is Phase 3.
+  - `TriageResult` fields are generated `rationale`, `queue`, `priority` (reasoning before labels, decisions 25 and 26). Haiku, thinking off, `max_tokens` 400, cached like the answer pipeline (`data/cache/triage/`).
+  - The priority rules are in `prompts/triage.md`: stakes and a time limit, not tone. Urgent = money or status at immediate risk, a deadline within 7 days, someone else using the person's SIN, a passport lost abroad, travel within 7 days; high = time-bound but not within days; normal = own situation, no time pressure; low = general information.
+  - Storage: SQLite (`TicketStore`), one short-lived connection per call so FastAPI worker threads are safe. A ticket whose triage fails (refusal, `max_tokens`, invalid output) is stored with status `triage_failed` and null labels, so a person can triage it; Anthropic errors store nothing and return 502.
+  - API: `POST /tickets`, `GET /tickets/{id}`, `GET /tickets?queue=&priority=&limit=&offset=`, with limits from `TriageSettings` (body 4000 characters, subject 200, page size 100).
+- **Eval set:** 68 candidate tickets drafted by Haiku, one request per (queue, priority) cell (3 per cell for the five programs, 2 per priority for `other`), styles rotating over plain, emotional, short and mixed. A person accepts, rejects or relabels each on a phone page (`sda-eval-triage-review`); the accepted set is `data/eval/triage_set_v1.jsonl` with the reviewer's labels and the draft labels kept beside them. `sda-eval-triage` reports queue and priority accuracy with Wilson intervals, urgent recall and precision, under- and over-triage, per-queue precision and recall, confusion matrices and a by-style table; dry run by default, capped, partial or dirty runs go to `data/eval/runs/`.
+- **Known weakness:** the drafter and the classifier are told the same priority rules, so the classifier can look good on tickets written to fit them. The independent check is the person who reviews the labels, and the `emotional` and `mixed` styles test whether tone or a second topic moves the result. Expect the first score to be optimistic; the next dataset (v2) should add tickets written without the rules in view.
+- **Not done:**
+  - No authentication or rate limit on `/tickets` (same as `/ask`; loopback only).
+  - Tickets are stored and sent to the model as typed: no PII redaction, no retention limit, no deletion endpoint.
+  - No human override or re-triage endpoint, no ticket status workflow beyond triaged and triage_failed.
+  - No escalation or confidence score (Phase 3).
+  - No scores yet: they wait for the reviewed set.
+- **Rejected:**
+  - An intent label as well: about twice the labelling work and more places for labels to disagree at this sample size.
+  - Templated tickets: free and fast but less realistic, and the labels would be mine alone.
+  - Reusing the answer-eval review tooling: it is built around pages and key facts; a small separate page was less work than generalising it.
