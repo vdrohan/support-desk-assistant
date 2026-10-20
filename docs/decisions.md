@@ -386,3 +386,21 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - A post-hoc string check on "the documents do not say…" openings: brittle, and it would hide the model's decision instead of fixing it.
   - Turning thinking on for the answer model: more cost on every call; reordering addresses the observed failure.
   - A retrieval-score threshold: the best out-of-corpus score is 0.525 and some in-domain misses score higher than answerable questions (retrieval eval, 2026-10-08).
+
+## 27. /ask endpoint: same pipeline as the CLI, validated answers only, no auth, loopback only
+
+- **Decision:** `POST /ask` (`api/app.py`, `create_app`) calls the same `prepare` and `execute` as `sda ask`, so retrieval, the score gate, the response cache, validation and the request log behave identically. Settings (`ApiSettings`): host `127.0.0.1`, port 8000, question length cap 1000, `k` cap 20. `GET /health` for liveness. `sda-api` runs it with uvicorn.
+- **Validated answers only:** if `validate_answer` fails (for example a citation that was not retrieved), the response is an abstention with status `validation_failed` and a fixed reason; the answer text is not returned. The CLI prints the failure and the text; an HTTP client has no one to read a warning.
+- **Response shape:** `abstained`, `answer`, `abstain_reason`, `citations` (numbered, title and URL, in the model's order), `status` (`ok`, `gate`, `validation_failed`, or a generation failure such as `max_tokens`), `model`, `cost_cad`, `latency_ms`, `cache_hit`. Generation failures are HTTP 200 with `abstained: true` and the status, because the pipeline already turns them into abstentions (decision 15).
+- **Errors:** invalid input 422 (empty or over-long question, unknown program, `k` out of range); search index or missing system prompt 503; Anthropic or Voyage failures 502. Error bodies carry no upstream detail.
+- **Threading:** the endpoint is a plain `def`, so FastAPI runs the blocking Voyage, Qdrant and Anthropic calls in worker threads. Clients are built on the first request, so the app imports without keys.
+- **Verified:** 16 offline tests (`tests/test_api.py`, stubbed ask function; the default wiring is patched); one real run against Qdrant, Voyage and Claude: an EI sickness question returned a cited answer in 2.5 s for CA$0.0007, an off-topic question was abstained by the score gate, an unknown program gave 422.
+- **Not done:**
+  - No authentication, rate limiting or request-size limit beyond the question length: do not expose it beyond loopback or the Tailscale host without a proxy in front.
+  - No per-request spend cap; every uncached request calls Claude. The CLI and eval spend caps do not apply here.
+  - No streaming, no conversation history, no Dockerfile or Compose service for the API (compose.yaml still runs Qdrant only).
+  - Concurrency was not load-tested; the response cache and request log append are plain files.
+- **Rejected:**
+  - Returning unvalidated answers with a warning flag: callers would ignore the flag.
+  - Async clients throughout: the pipeline and its tests are synchronous; threads give concurrency without a rewrite.
+  - A Dockerfile now: the deployment plan is Phase 3 and the API is not exposed yet (README roadmap).
