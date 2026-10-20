@@ -133,7 +133,7 @@ class EvalSettings(BaseModel):
     judge_max_tokens: int = 400
     judge_prompt_path: Path = Path("prompts/eval_judge.md")
     # Bump when the judge prompt or schema changes (part of the judge cache key).
-    judge_schema_version: int = 1
+    judge_schema_version: int = 2  # 2: reason before present (decisions.md #25)
     # Facts this short (in words) are checked by string matching, not the judge.
     atomic_fact_max_words: int = 6
     # Content words shorter than this are ignored when matching a fact.
