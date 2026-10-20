@@ -634,7 +634,7 @@ def test_judge_cache_key_depends_on_inputs(jsettings):
     assert key != judge_cache_key("SYS2", "USER", jsettings)
     assert key != judge_cache_key("SYS", "USER2", jsettings)
     bumped = jsettings.model_copy(
-        update={"eval": jsettings.eval.model_copy(update={"judge_schema_version": 2})}
+        update={"eval": jsettings.eval.model_copy(update={"judge_schema_version": 3})}
     )
     assert key != judge_cache_key("SYS", "USER", bumped)
 

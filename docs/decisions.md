@@ -340,3 +340,19 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - Keeping run 0 as the baseline and noting the truncation: the baseline would mix model quality with the cap.
   - Asking the prompt for shorter answers instead: a prompt change confounds the comparison with run 0, and the answers were not rambling. Worth a separate decision if cost or length becomes a concern.
 - **Also fixed:** the per-category "false abstention" column counted any abstained row, including these truncation fallbacks, while the overall table (decision 23) counted only gate and model abstentions. Both now use the decision 23 rule; the run 0 files still show the old category numbers.
+
+## 25. Judge v2: reason before verdict, multi-benefit rule; calibration labels written by Claude
+
+- **Decision:** `JudgeItem` field order becomes `fact_index`, `reason`, `present` (was `fact_index`, `present`, `reason`), the judge prompt asks for the reason first, and `judge_schema_version` goes 1 -> 2. The prompt gains one rule: a fact that lists several programs or benefits is stated when the answer states it for the one the question is about (an explicit exception to "ignore the question's wording"; a first wording without the exception was ignored by the judge).
+- **Reason:** first calibration (50 labelled facts; 37/40 judge agreement, all 3 disagreements judge-absent vs label-present). The raw replies showed two causes:
+  - *Verdict before reasoning.* The schema put `present` first and the judge runs with thinking off, so the model decided before it reasoned. Two replies (ev-012, ev-021) have `"present": false` and a reason that concludes the fact is stated; the ev-012 reason even ends in a stray `','present':true}`. Replies for the same fact with `reason` first were consistent with their reasoning. Not a parse bug: the JSON was valid.
+  - *Ambiguous multi-benefit fact* (ev-033: "GIS, Allowance or Allowance for the Survivor", answer names only the Allowance, which is what the question asks about). The cached replies split 3 absent to 1 present. The new prompt rule settles it in favour of present. The frozen dataset (decision 20) is not edited.
+- **Effect on results:** judge cache keys change (schema version, prompt), so every judged fact is re-asked on the next run; answer cache keys do not change. The baseline answerable pass rate (0.78, run 1) was scored with judge v1 and must be re-recorded with v2 before it is quoted next to later runs.
+- **Calibration labels:** the 50 records in `data/eval/judge_calibration.jsonl` were labelled blind by Claude, not a person (the field and the report call them `human`). They are to be read as Claude vs Haiku agreement until the disagreements are reviewed by a person.
+- **Result of the replay (2026-10-20, same 50 labels):** agreement 37/40 -> 40/40 (kappa 0.38 -> 1.00); the other two disagreements went away with the field reorder alone, ev-033 needed the prompt rule. This is in-sample: the ev-033 rule was written for an item in the calibration set, and the first replay ran with the main checkout's copy of the prompt, which differs by a few lines from this repo's committed one. Treat 40/40 as "the known failures are fixed", not as a measured accuracy.
+- **Known limits:**
+  - The calibration set has 1 absent fact out of 40 judged. The judge's false-present rate (the direction that inflates scores) is therefore unmeasured: 0/1, 95% interval [0.00, 0.79]. More absent-fact labels are needed, e.g. from failed answerable items.
+  - Same-input judge flips are visible in the cache (ev-021, ev-033). Not yet quantified; the decision 23 non-determinism check is still open.
+- **Rejected:**
+  - Turning thinking on for the judge: more cost and latency on every call, when reordering the fields addresses the observed failure.
+  - Editing the ev-033 key fact: the dataset has published results.

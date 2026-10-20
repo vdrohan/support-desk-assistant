@@ -462,8 +462,10 @@ class JudgeItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     fact_index: int  # 1-based, as numbered in the user message
-    present: bool
+    # reason before present: with thinking off, the verdict is the model's first decision,
+    # so it must come after the reasoning (decisions.md #25).
     reason: str
+    present: bool
 
 
 class JudgeResult(BaseModel):
