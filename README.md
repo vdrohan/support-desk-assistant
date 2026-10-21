@@ -51,7 +51,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
 | 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels, human review and absent-fact labels pending), `/ask` endpoint (`sda-api`) ✅ | ✅ done |
-| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval pipeline (scenario-drafted tickets, silver and blind gold labels, dev/test split, baselines) and `sda-eval-triage` runner ✅, first scores pending the gold labels | 🚧 in progress |
+| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval pipeline (scenario-drafted tickets, silver and blind gold labels, dev/test split, baselines) and `sda-eval-triage` runner ✅, gold sample of 50: 10 labelled by the owner, 40 where three blind model passes (Sonnet, Sonnet, Opus) agreed, not reviewed by a person (decision 28); first scores pending | 🚧 in progress |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
 A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it. A reorder-only run (2a) and an independent audit of run 1 are in [docs/judge_audit_run1.md](docs/judge_audit_run1.md).
