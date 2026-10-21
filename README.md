@@ -51,7 +51,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
 | 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels, human review and absent-fact labels pending), `/ask` endpoint (`sda-api`) ✅ | ✅ done |
-| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval set (drafted, awaiting human review) and `sda-eval-triage` runner ✅, first triage scores pending the reviewed set | 🚧 in progress |
+| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval pipeline (scenario-drafted tickets, silver and blind gold labels, dev/test split, baselines) and `sda-eval-triage` runner ✅, first scores pending the gold labels | 🚧 in progress |
 | 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
 
 A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it. A reorder-only run (2a) and an independent audit of run 1 are in [docs/judge_audit_run1.md](docs/judge_audit_run1.md).
@@ -146,10 +146,12 @@ Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and ret
 ### Triage tickets
 
 ```bash
-uv run sda-eval-triage-draft --yes          # Haiku drafts ~68 candidate tickets (about CA$0.05)
-uv run sda-eval-triage-review --export      # phone page: keep or change each queue/priority, accept or reject
-uv run sda-eval-triage-review --apply FILE  # record the copied decisions into data/eval/triage_set_v1.jsonl
-uv run sda-eval-triage                      # dry run; --yes scores the classifier (queue and priority accuracy, urgent recall)
+uv run sda-eval-triage-draft --yes          # Haiku drafts 150 tickets from scenarios, never from labels (about CA$0.10)
+uv run sda-eval-triage-label --yes --cap 9  # Sonnet labels all of them (silver); real cost about CA$1
+uv run sda-eval-triage-review --export      # blind page: you label a stratified sample (gold), no draft labels shown
+uv run sda-eval-triage-review --apply FILE  # record the copied decisions as gold labels
+uv run sda-eval-triage-label --build        # merge silver and gold into data/eval/triage_set_v1.jsonl with a dev/test split
+uv run sda-eval-triage --split dev          # dry run; --yes scores the classifier on dev; --split test is scored once
 ```
 
 A ticket is triaged into one queue (`ei`, `cpp`, `oas`, `sin`, `passport`, `other`) and one priority (`urgent`, `high`, `normal`, `low`); the rules are in [prompts/triage.md](prompts/triage.md). Tickets are free text and can contain personal information: the SQLite store (`data/tickets.sqlite`, gitignored) keeps them as typed and they are sent to the Anthropic API, so don't put real SINs or passport numbers in them.
