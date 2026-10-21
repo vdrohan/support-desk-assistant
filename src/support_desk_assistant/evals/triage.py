@@ -47,6 +47,8 @@ class Row:
     body: str
     queue: str
     priority: str
+    split: str = ""
+    label_source: str = ""
     status: str = "pending"
     pred_queue: str | None = None
     pred_priority: str | None = None
@@ -122,6 +124,29 @@ def summarize(rows: Sequence[Row], z: float) -> dict[str, Any]:
     }
 
 
+def summarize_bundle(
+    rows: Sequence[Row], train_items: Sequence[Mapping[str, Any]], settings: Settings
+) -> dict[str, Any]:
+    """The all-items summary, the gold-only summary (labels a person gave, blind), and two
+    baselines scored on the same rows: the dev majority label and a keyword rule."""
+    z = settings.eval.ci_z
+    gold = [r for r in rows if r.label_source == "gold"]
+    train = [
+        Row(id=i["id"], style="", subject="", body="", queue=i["queue"], priority=i["priority"])
+        for i in train_items
+    ]
+    return {
+        "all": summarize(rows, z),
+        "gold": summarize(gold, z) if gold else None,
+        "baselines": {
+            "majority (dev labels)": summarize(majority_baseline(rows, train), z)
+            if train
+            else None,
+            "keywords": summarize(keyword_baseline(rows, settings), z),
+        },
+    }
+
+
 def _ci(m: Mapping[str, Any]) -> str:
     if m["rate"] is None:
         return "n/a (n=0)"
@@ -138,11 +163,34 @@ def _matrix(title: str, labels: Sequence[str], cm: Mapping[str, Mapping[str, int
     return [*lines, ""]
 
 
-def render_markdown(meta: Mapping[str, Any], s: Mapping[str, Any], rows: Sequence[Row]) -> str:
+def _gold_and_baselines(bundle: Mapping[str, Any]) -> list[str]:
+    keys = [
+        ("queue", "queue_accuracy"),
+        ("priority", "priority_accuracy"),
+        ("urgent recall", "urgent_recall"),
+        ("within one level", "priority_within_one"),
+    ]
+    out: list[str] = []
+    gold = bundle.get("gold")
+    if gold:
+        out += [f"## Gold subset (labelled blind by a person, n={gold['n']})", ""]
+        out += ["| metric | rate [95% CI] (k/n) |", "|---|---|"]
+        out += [f"| {name} | {_ci(gold[key])} |" for name, key in keys]
+        out.append("")
+    out += ["## Baselines (same rows)", "", "| baseline | " + " | ".join(n for n, _ in keys) + " |"]
+    out.append("|---|" + "---|" * len(keys))
+    for name, b in bundle["baselines"].items():
+        if b:
+            out.append(f"| {name} | " + " | ".join(_ci(b[key]) for _, key in keys) + " |")
+    return [*out, ""]
+
+
+def render_markdown(meta: Mapping[str, Any], bundle: Mapping[str, Any], rows: Sequence[Row]) -> str:
+    s = bundle["all"]
     out = [
         f"# Triage eval: {meta['dataset']['name']}, {meta['model']}",
         "",
-        f"run {meta['run_id']} · git {meta['git']['sha']}"
+        f"run {meta['run_id']} · split {meta['split']} · git {meta['git']['sha']}"
         f"{' (dirty)' if meta['git']['dirty'] else ''} · prompt {meta['prompt_sha256'][:12]}",
         "",
         "## Overall",
@@ -162,6 +210,7 @@ def render_markdown(meta: Mapping[str, Any], s: Mapping[str, Any], rows: Sequenc
     ]:
         out.append(f"| {label} | {_ci(s[key])} |")
     out += ["", f"Generation failures (counted as wrong): {s['generation_failures']}", ""]
+    out += _gold_and_baselines(bundle)
     out += ["## Per queue", "", "| queue | recall | precision |", "|---|---|---|"]
     out += [
         f"| {q} | {_ci(v['recall'])} | {_ci(v['precision'])} |" for q, v in s["per_queue"].items()
@@ -194,6 +243,48 @@ def render_markdown(meta: Mapping[str, Any], s: Mapping[str, Any], rows: Sequenc
     return "\n".join(out)
 
 
+def keyword_baseline(rows: Sequence[Row], settings: Settings) -> list[Row]:
+    """A rule with no model: queue by program keywords (else other), urgent if an urgent word
+    appears (else normal)."""
+    cfg = settings.triage_eval
+    out = []
+    for r in rows:
+        text = f"{r.subject} {r.body}".lower() + " "
+        scores = {q: sum(w in text for w in words) for q, words in cfg.baseline_queue_words.items()}
+        best = max(scores, key=lambda q: scores[q])
+        urgent = any(w in text for w in cfg.baseline_urgent_words)
+        out.append(
+            Row(
+                **{
+                    **r.__dict__,
+                    "status": "ok",
+                    "rationale": None,
+                    "pred_queue": best if scores[best] else "other",
+                    "pred_priority": "urgent" if urgent else "normal",
+                }
+            )
+        )
+    return out
+
+
+def majority_baseline(rows: Sequence[Row], train: Sequence[Row]) -> list[Row]:
+    """Always predict the most common queue and priority of ``train`` (the dev labels)."""
+    queue = Counter(r.queue for r in train).most_common(1)[0][0]
+    priority = Counter(r.priority for r in train).most_common(1)[0][0]
+    return [
+        Row(
+            **{
+                **r.__dict__,
+                "status": "ok",
+                "rationale": None,
+                "pred_queue": queue,
+                "pred_priority": priority,
+            }
+        )
+        for r in rows
+    ]
+
+
 def estimate_cad(items: Sequence[Mapping[str, Any]], system: str, settings: Settings) -> float:
     cfg = settings.triage
     usage = Usage(output_tokens=cfg.max_tokens)
@@ -215,6 +306,8 @@ def score_item(
     row = Row(
         id=it["id"],
         style=it.get("style", ""),
+        split=it.get("split", ""),
+        label_source=it.get("label_source", ""),
         subject=it["subject"],
         body=it["body"],
         queue=it["queue"],
@@ -265,10 +358,11 @@ def run_items(
 
 
 def build_meta(
-    settings: Settings, dataset: Path, rows: Sequence[Row], run_id: str
+    settings: Settings, dataset: Path, rows: Sequence[Row], run_id: str, split: str = "all"
 ) -> dict[str, Any]:
     return {
         "run_id": run_id,
+        "split": split,
         "created_at": datetime.now(UTC).replace(microsecond=0).isoformat(),
         "git": git_state(),
         "dataset": {"name": dataset.name, "sha256": file_sha256(dataset)},
@@ -287,7 +381,7 @@ def write_results(
 ) -> list[Path]:
     directory.mkdir(parents=True, exist_ok=True)
     dataset_name = meta["dataset"]["name"].removesuffix(".jsonl")
-    stem = f"{RESULT_PREFIX}_{dataset_name}_{meta['model']}_{meta['run_id']}"
+    stem = f"{RESULT_PREFIX}_{dataset_name}_{meta['model']}_{meta['split']}_{meta['run_id']}"
     jsonl = directory / f"{stem}.jsonl"
     jsonl.write_text(
         "".join(
@@ -310,30 +404,53 @@ def write_results(
     return [jsonl, summary_path, md]
 
 
+def test_already_scored(settings: Settings, dataset: Path) -> list[Path]:
+    """Committed results of a test-split run on this exact dataset version."""
+    sha = file_sha256(dataset)
+    found = []
+    for path in sorted(settings.eval_results_dir.glob(f"{RESULT_PREFIX}_*.summary.json")):
+        meta = json.loads(path.read_text(encoding="utf-8")).get("meta", {})
+        if meta.get("split") == "test" and meta.get("dataset", {}).get("sha256") == sha:
+            found.append(path)
+    return found
+
+
 def main(argv: list[str] | None = None) -> int:
     settings = get_settings()
     parser = argparse.ArgumentParser(prog="sda-eval-triage", description=__doc__)
+    parser.add_argument("--split", choices=["dev", "test", "all"], default="dev")
     parser.add_argument("--yes", action="store_true", help="call Claude (costs money)")
     parser.add_argument("--limit", type=int, help="only the first N items (partial run)")
     parser.add_argument("--cap", type=float, default=settings.triage_eval.spend_cap_cad)
     parser.add_argument(
         "--allow-dirty", action="store_true", help="write results/ from a dirty tree"
     )
+    parser.add_argument(
+        "--rerun-test", action="store_true", help="score the test split again (it is meant once)"
+    )
     args = parser.parse_args(argv)
 
     dataset = settings.triage_set_path
     if not dataset.exists():
-        print(f"no triage set at {dataset}; review candidates with sda-eval-triage-review")
+        print(f"no triage set at {dataset}; build it with sda-eval-triage-label --build")
         return 2
-    items = load_items(dataset)
+    all_items = load_items(dataset)
+    items = [i for i in all_items if args.split == "all" or i["split"] == args.split]
+    train_items = [i for i in all_items if i["split"] == "dev"]
     partial = args.limit is not None
     if partial:
         items = items[: args.limit]
+    if args.split == "test" and args.yes and not args.rerun_test:
+        done = test_already_scored(settings, dataset)
+        if done:
+            print(f"the test split was already scored for this dataset ({done[0].name}).")
+            print("It is meant to be scored once. Use --rerun-test to do it again.")
+            return 2
     system = load_system_prompt(settings.triage.system_prompt_path)
     est = estimate_cad(items, system, settings)
     print(
-        f"Triage eval plan: {dataset.name}, {len(items)} items, model {settings.triage.model}. "
-        f"Upper bound CA${est:.4f} vs cap CA${args.cap:.2f}."
+        f"Triage eval plan: {dataset.name}, split {args.split}, {len(items)} items, "
+        f"model {settings.triage.model}. Upper bound CA${est:.4f} vs cap CA${args.cap:.2f}."
     )
     if est > args.cap:
         print("Over the cap; nothing sent.")
@@ -343,15 +460,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     rows, notes = run_items(items, settings=settings, cap_cad=args.cap)
-    meta = build_meta(settings, dataset, rows, new_run_id())
-    summary = summarize(rows, settings.eval.ci_z)
+    meta = build_meta(settings, dataset, rows, new_run_id(), args.split)
+    bundle = summarize_bundle(rows, train_items, settings)
     stopped = bool(notes)
     to_runs = partial or stopped or (dirty_blocks_results(meta["git"]) and not args.allow_dirty)
     directory = settings.runs_dir if to_runs else settings.eval_results_dir
-    paths = write_results(directory, meta, summary, rows)
+    paths = write_results(directory, meta, bundle, rows)
+    s = bundle["all"]
     print(
-        f"queue {_ci(summary['queue_accuracy'])}; priority {_ci(summary['priority_accuracy'])}; "
-        f"urgent recall {_ci(summary['urgent_recall'])}"
+        f"queue {_ci(s['queue_accuracy'])}; priority {_ci(s['priority_accuracy'])}; "
+        f"urgent recall {_ci(s['urgent_recall'])}"
     )
     print(f"cost CA${meta['cost_cad']:.4f}. wrote {', '.join(str(p) for p in paths)}")
     if to_runs:
