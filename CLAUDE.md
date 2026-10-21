@@ -18,9 +18,10 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
     - `stats.py`: Wilson interval, confusion counts, Cohen's kappa
     - `breakdown.py`: overall, by program, abstention, citation and failure-attribution rows
     - `provenance.py`: reproducibility block recorded with every answer-eval run
-    - `triage_draft.py`: `sda-eval-triage-draft`, Haiku drafts candidate tickets
-    - `triage_review.py`: `sda-eval-triage-review`, offline phone review page and `--apply`
-    - `triage.py`: `sda-eval-triage`, scores the triage classifier on `data/eval/triage_set_v1.jsonl`
+    - `triage_draft.py`: `sda-eval-triage-draft`, Haiku drafts tickets from scenarios (never from labels)
+    - `triage_label.py`: `sda-eval-triage-label`, Sonnet silver labels, gold sampling, `--build` the set with a dev/test split
+    - `triage_review.py`: `sda-eval-triage-review`, offline blind gold-labelling page and `--apply`
+    - `triage.py`: `sda-eval-triage`, scores the classifier on `data/eval/triage_set_v1.jsonl` (dev/test, gold view, baselines; test is scored once)
     - `calibrate.py`: blind-sheet label import and judge vs human agreement
 - `tests/`: pytest; fixtures in `tests/fixtures/`. No live network in tests: use `httpx.MockTransport`, `tests/fakes.py` (fake Voyage) and `QdrantClient(":memory:")`
 - `data/manifest.jsonl`: committed corpus definition. Gitignored: `data/raw/`, `data/processed/`, `data/chunks.jsonl`, `data/cache/` (embedding cache)
@@ -38,6 +39,7 @@ uv run python -m support_desk_assistant.ingest.crawl [--program ei] [--refresh]
 uv run sda-ingest [--program ei] [--dry-run]   # chunk -> embed -> index (needs the Qdrant tunnel)
 uv run sda-search "question" [--program ei] [-k 5]
 uv run sda-eval-triage-draft [--yes] [--force]   # Claude API, costs money; dry run by default
+uv run sda-eval-triage-label [--yes] [--cap CAD] | --build   # Sonnet labels (costs money; the pre-flight bound is far above real cost)
 uv run sda-eval-triage-review [--status | --export | --apply FILE]   # offline
 uv run sda-eval-triage [--yes] [--limit N]   # dry run by default; --yes calls Claude (capped)
 uv run sda-api                   # serve POST /ask on 127.0.0.1:8000 (needs the Qdrant tunnel and both API keys)
