@@ -239,6 +239,7 @@ data/eval/review.html
 data/eval/judge_review.md
 data/eval/runs/
 data/eval/triage_candidates.jsonl
+data/eval/triage_silver.jsonl
 data/eval/triage_review_state.json
 data/eval/triage_review.html
 

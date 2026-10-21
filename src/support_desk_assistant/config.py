@@ -115,16 +115,31 @@ class TriageSettings(BaseModel):
 
 class TriageEvalSettings(BaseModel):
     """Triage eval (docs/decisions.md #28). Datasets are versioned files under ``data/eval/``;
-    never edit one that has published results, add ``_v2``."""
+    never edit one that has published results, add ``_v2``.
+
+    Tickets are drafted from a scenario (topic, situation, style), never from a label; labels
+    come afterwards: a stronger model labels everything (silver) and a person labels a
+    stratified sample blind (gold)."""
 
     draft_model: str = "claude-haiku-5-5"
     draft_max_tokens: int = 2500
     draft_prompt_path: Path = Path("prompts/triage_draft.md")
-    draft_seed: int = 20261020
-    draft_per_cell: int = 3  # tickets per (queue, priority) for the five programs
-    draft_per_cell_other: int = 2  # tickets per priority for the "other" queue
-    draft_schema_version: int = 1
-    draft_titles_per_task: int = 6  # page titles shown as topic hints
+    draft_seed: int = 20261021
+    draft_schema_version: int = 2
+    tickets_per_request: int = 3
+    # Tickets per coverage style; their sum is the number of tickets drafted.
+    style_counts: dict[str, int] = {
+        "plain": 45,
+        "emotional": 30,
+        "short": 25,
+        "mixed": 15,
+        "confused_program": 12,
+        "french": 12,
+        "injection": 6,
+        "greeting": 5,
+    }
+    other_share: float = 0.12  # share of tickets about a topic outside the five programs
+    high_stakes_share: float = 0.40  # share drawn from the high-stakes situations
     other_topics: list[str] = [
         "income tax return or tax refund",
         "provincial health card or health insurance",
@@ -135,11 +150,63 @@ class TriageEvalSettings(BaseModel):
         "child benefit or other tax-based benefit",
         "student loans or tuition",
         "a business licence or small business grant",
-        "a greeting or test message with no request",
+    ]
+    high_stakes_situations: list[str] = [
+        "their payment stopped or did not arrive and they depend on it",
+        "a deadline written in a letter falls within the next few days",
+        "they think someone else is using their SIN or identity",
+        "their passport was lost or stolen while they were travelling",
+        "they travel within a week and the passport is missing, expired or not ready",
+        "a job or benefit starts within days and they need a document or number first",
+        "a decision letter reduced or ended their benefit",
+    ]
+    other_situations: list[str] = [
+        "a claim or application is taking longer than the stated time",
+        "they were paid a different amount than they expected",
+        "they want to appeal a decision",
+        "a trip or deadline is a few weeks away",
+        "asking whether they qualify",
+        "asking how to apply",
+        "asking how an amount is calculated",
+        "reporting a change of address or name",
+        "asking which documents they need",
+        "asking how long a process takes, with no deadline",
+        "general curiosity about how the program works",
+    ]
+    # Labelling: a stronger model labels every ticket (silver); a person labels a sample (gold).
+    label_model: str = "claude-sonnet-5-5"
+    label_max_tokens: int = 4000  # thinking headroom, as for the Sonnet answer profile
+    # Gold sample size per silver priority (stratified so urgent is not left to chance).
+    gold_sample: dict[str, int] = {"urgent": 15, "high": 12, "normal": 12, "low": 11}
+    sample_seed: int = 20261021
+    test_share: float = 0.5
+    split_salt: str = "triage-v1"
+    # Baselines for the scorer: a keyword rule and the majority label (the floor to beat).
+    baseline_queue_words: dict[str, list[str]] = {
+        "ei": ["ei ", "employment insurance", "record of employment", "laid off", "roe"],
+        "cpp": ["cpp", "canada pension plan", "survivor", "disability"],
+        "oas": ["oas", "old age security", "gis", "guaranteed income", "allowance"],
+        "sin": ["sin ", "social insurance"],
+        "passport": ["passport", "travel document"],
+    }
+    baseline_urgent_words: list[str] = [
+        "stopped",
+        "did not arrive",
+        "didn't arrive",
+        "stolen",
+        "fraud",
+        "identity",
+        "tomorrow",
+        "this week",
+        "days",
+        "urgent",
+        "emergency",
     ]
     candidates_file: str = "triage_candidates.jsonl"
+    silver_file: str = "triage_silver.jsonl"
     review_state_file: str = "triage_review_state.json"
     review_html_file: str = "triage_review.html"
+    gold_file: str = "triage_gold_v1.jsonl"
     set_file: str = "triage_set_v1.jsonl"
     spend_cap_cad: float = 0.25
 
@@ -310,6 +377,14 @@ class Settings(BaseSettings):
     @property
     def triage_review_html_path(self) -> Path:
         return self.eval_dir / self.triage_eval.review_html_file
+
+    @property
+    def triage_silver_path(self) -> Path:
+        return self.eval_dir / self.triage_eval.silver_file
+
+    @property
+    def triage_gold_path(self) -> Path:
+        return self.eval_dir / self.triage_eval.gold_file
 
     @property
     def triage_set_path(self) -> Path:

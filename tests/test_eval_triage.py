@@ -11,8 +11,10 @@ from support_desk_assistant.evals import triage as ev
 Z = 1.96
 
 
-def item(i, queue, priority, style="plain"):
+def item(i, queue, priority, style="plain", split="dev", source="silver"):
     return {
+        "split": split,
+        "label_source": source,
         "id": f"tt-{i:03d}",
         "subject": f"s{i}",
         "body": f"body {i}",
@@ -23,10 +25,10 @@ def item(i, queue, priority, style="plain"):
 
 
 ITEMS = [
-    item(1, "ei", "urgent"),
+    item(1, "ei", "urgent", source="gold"),
     item(2, "ei", "low", "short"),
-    item(3, "cpp", "high", "emotional"),
-    item(4, "oas", "normal"),
+    item(3, "cpp", "high", "emotional", split="test", source="gold"),
+    item(4, "oas", "normal", split="test"),
 ]
 # What the fake model answers for each ticket body.
 ANSWERS = {
@@ -137,8 +139,8 @@ def test_markdown_and_files(settings, tmp_path):
     rows = rows_for(settings)
     dataset = tmp_path / "triage_set_v1.jsonl"
     dataset.write_text("".join(json.dumps(i) + "\n" for i in ITEMS))
-    meta = ev.build_meta(settings, dataset, rows, "20261020T000000Z")
-    summary = ev.summarize(rows, Z)
+    meta = ev.build_meta(settings, dataset, rows, "20261020T000000Z", "dev")
+    summary = ev.summarize_bundle(rows, ITEMS[:2], settings)
     md = ev.render_markdown(meta, summary, rows)
     for needle in (
         "## Overall",
@@ -164,13 +166,7 @@ def test_main_dry_run_then_partial_goes_to_runs(settings, tmp_path, monkeypatch,
     assert ev.main([]) == 0
     assert "dry run" in capsys.readouterr().out
     monkeypatch.setattr(
-        ev,
-        "triage_ticket",
-        lambda s, b, settings, client=None: (
-            ev.triage_ticket.__wrapped__(s, b, settings, client)
-            if False
-            else _fake_triage(s, b, settings)
-        ),
+        ev, "triage_ticket", lambda s, b, settings, client=None: _fake_triage(s, b, settings)
     )
     assert ev.main(["--yes", "--limit", "2"]) == 0
     out = capsys.readouterr().out
@@ -193,3 +189,88 @@ def test_main_without_a_set_explains(settings, monkeypatch, capsys):
     monkeypatch.setattr(ev, "get_settings", lambda: settings)
     assert ev.main([]) == 2
     assert "no triage set" in capsys.readouterr().out
+
+
+def write_set(settings, items=ITEMS):
+    path = settings.triage_set_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("".join(json.dumps(i) + "\n" for i in items))
+    return path
+
+
+def test_bundle_has_gold_view_and_two_baselines(settings):
+    rows = rows_for(settings)
+    bundle = ev.summarize_bundle(rows, [i for i in ITEMS if i["split"] == "dev"], settings)
+    assert bundle["all"]["n"] == 4
+    assert bundle["gold"]["n"] == 2  # tt-001 and tt-003 carry gold labels
+    assert set(bundle["baselines"]) == {"majority (dev labels)", "keywords"}
+    assert bundle["baselines"]["majority (dev labels)"]["n"] == 4
+
+
+def test_gold_view_is_absent_without_gold_labels(settings):
+    rows = rows_for(settings, items=[dict(i, label_source="silver") for i in ITEMS])
+    assert ev.summarize_bundle(rows, ITEMS, settings)["gold"] is None
+
+
+def test_majority_baseline_predicts_the_dev_mode(settings):
+    rows = rows_for(settings)
+    train = [
+        ev.Row("a", "", "", "", "ei", "low"),
+        ev.Row("b", "", "", "", "ei", "low"),
+        ev.Row("c", "", "", "", "cpp", "high"),
+    ]
+    out = ev.majority_baseline(rows, train)
+    assert {(r.pred_queue, r.pred_priority) for r in out} == {("ei", "low")}
+    assert [r.queue for r in out] == [r.queue for r in rows]  # truth untouched
+
+
+def test_keyword_baseline_rules(settings):
+    def row(text):
+        return ev.Row("x", "", "", text, "ei", "normal")
+
+    out = ev.keyword_baseline(
+        [
+            row("my employment insurance payment stopped"),
+            row("how do i renew my passport"),
+            row("what is the minimum wage"),
+            row("my oas letter arrived"),
+        ],
+        settings,
+    )
+    assert [(r.pred_queue, r.pred_priority) for r in out] == [
+        ("ei", "urgent"),
+        ("passport", "normal"),
+        ("other", "normal"),
+        ("oas", "normal"),
+    ]
+
+
+def test_main_scores_only_the_chosen_split(settings, monkeypatch, capsys):
+    write_set(settings)
+    monkeypatch.setattr(ev, "get_settings", lambda: settings)
+    assert ev.main(["--split", "test"]) == 0
+    assert "split test, 2 items" in capsys.readouterr().out
+    assert ev.main(["--split", "dev"]) == 0
+    assert "split dev, 2 items" in capsys.readouterr().out
+    assert ev.main(["--split", "all"]) == 0
+    assert "split all, 4 items" in capsys.readouterr().out
+
+
+def test_test_split_is_meant_to_be_scored_once(settings, monkeypatch, capsys):
+    dataset = write_set(settings)
+    monkeypatch.setattr(ev, "get_settings", lambda: settings)
+    monkeypatch.setattr(
+        ev, "triage_ticket", lambda s, b, settings, client=None: _fake_triage(s, b, settings)
+    )
+    assert ev.test_already_scored(settings, dataset) == []
+    rows = rows_for(settings, items=[i for i in ITEMS if i["split"] == "test"])
+    meta = ev.build_meta(settings, dataset, rows, "20261020T000000Z", "test")
+    bundle = ev.summarize_bundle(rows, ITEMS[:2], settings)
+    ev.write_results(settings.eval_results_dir, meta, bundle, rows)
+    assert len(ev.test_already_scored(settings, dataset)) == 1
+    assert ev.main(["--split", "test", "--yes"]) == 2
+    assert "meant to be scored once" in capsys.readouterr().out
+    # a dev run is not blocked, and a changed dataset version is a fresh test split
+    assert ev.main(["--split", "dev", "--yes", "--limit", "1"]) == 0
+    write_set(settings, items=ITEMS[:3])
+    assert ev.test_already_scored(settings, settings.triage_set_path) == []
