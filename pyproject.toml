@@ -31,6 +31,7 @@ sda-eval-review = "support_desk_assistant.evals.review:main"
 sda-eval-answers = "support_desk_assistant.evals.answers:main"
 sda-api = "support_desk_assistant.api.__main__:main"
 sda-eval-triage-draft = "support_desk_assistant.evals.triage_draft:main"
+sda-eval-triage-label = "support_desk_assistant.evals.triage_label:main"
 sda-eval-triage-review = "support_desk_assistant.evals.triage_review:main"
 sda-eval-triage = "support_desk_assistant.evals.triage:main"
 
