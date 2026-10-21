@@ -252,3 +252,5 @@ logs/
 
 # ticket store (docs/decisions.md #28): holds whatever users typed
 data/tickets.sqlite*
+data/eval/triage_claude_pass_v1.jsonl
+data/eval/triage_claude_pass_state_v1.json

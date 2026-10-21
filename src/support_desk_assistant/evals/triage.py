@@ -49,6 +49,7 @@ class Row:
     priority: str
     split: str = ""
     label_source: str = ""
+    labelled_by: str = ""
     status: str = "pending"
     pred_queue: str | None = None
     pred_priority: str | None = None
@@ -127,10 +128,12 @@ def summarize(rows: Sequence[Row], z: float) -> dict[str, Any]:
 def summarize_bundle(
     rows: Sequence[Row], train_items: Sequence[Mapping[str, Any]], settings: Settings
 ) -> dict[str, Any]:
-    """The all-items summary, the gold-only summary (labels a person gave, blind), and two
-    baselines scored on the same rows: the dev majority label and a keyword rule."""
+    """The all-items summary, the gold-only summary (blind labels, by a person or agreed by
+    model passes), its human-labelled part, and two baselines scored on the same rows: the
+    dev majority label and a keyword rule."""
     z = settings.eval.ci_z
     gold = [r for r in rows if r.label_source == "gold"]
+    human = [r for r in gold if r.labelled_by == "human"]
     train = [
         Row(id=i["id"], style="", subject="", body="", queue=i["queue"], priority=i["priority"])
         for i in train_items
@@ -138,6 +141,7 @@ def summarize_bundle(
     return {
         "all": summarize(rows, z),
         "gold": summarize(gold, z) if gold else None,
+        "gold_human": summarize(human, z) if human else None,
         "baselines": {
             "majority (dev labels)": summarize(majority_baseline(rows, train), z)
             if train
@@ -163,7 +167,27 @@ def _matrix(title: str, labels: Sequence[str], cm: Mapping[str, Mapping[str, int
     return [*lines, ""]
 
 
-def _gold_and_baselines(bundle: Mapping[str, Any]) -> list[str]:
+def _labelled_by_line(rows: Sequence[Row]) -> str:
+    """Who gave the gold labels: a person, agreeing model passes, or anything else recorded."""
+    counts: Counter[str] = Counter()
+    for r in rows:
+        if r.label_source != "gold":
+            continue
+        if r.labelled_by == "human":
+            counts["human"] += 1
+        elif r.labelled_by.startswith("model-agreed"):
+            counts["model-agreed"] += 1
+        else:
+            counts[r.labelled_by or "unknown"] += 1
+    other = sorted(k for k in counts if k not in ("human", "model-agreed"))
+    parts = [f"{k} {counts[k]}" for k in ["human", "model-agreed", *other]]
+    line = f"Labels by source: {', '.join(parts)}."
+    if counts["model-agreed"]:
+        line += " Model-agreed labels were not reviewed by a person."
+    return line
+
+
+def _gold_and_baselines(bundle: Mapping[str, Any], rows: Sequence[Row]) -> list[str]:
     keys = [
         ("queue", "queue_accuracy"),
         ("priority", "priority_accuracy"),
@@ -173,9 +197,15 @@ def _gold_and_baselines(bundle: Mapping[str, Any]) -> list[str]:
     out: list[str] = []
     gold = bundle.get("gold")
     if gold:
-        out += [f"## Gold subset (labelled blind by a person, n={gold['n']})", ""]
+        out += [f"## Gold subset (blind labels, n={gold['n']})", "", _labelled_by_line(rows), ""]
         out += ["| metric | rate [95% CI] (k/n) |", "|---|---|"]
         out += [f"| {name} | {_ci(gold[key])} |" for name, key in keys]
+        out.append("")
+    human = bundle.get("gold_human")
+    if human and human["n"] >= 1:
+        out += [f"**Human-labelled subset (n={human['n']})**", ""]
+        out += ["| metric | rate [95% CI] (k/n) |", "|---|---|"]
+        out += [f"| {name} | {_ci(human[key])} |" for name, key in keys]
         out.append("")
     out += ["## Baselines (same rows)", "", "| baseline | " + " | ".join(n for n, _ in keys) + " |"]
     out.append("|---|" + "---|" * len(keys))
@@ -210,7 +240,7 @@ def render_markdown(meta: Mapping[str, Any], bundle: Mapping[str, Any], rows: Se
     ]:
         out.append(f"| {label} | {_ci(s[key])} |")
     out += ["", f"Generation failures (counted as wrong): {s['generation_failures']}", ""]
-    out += _gold_and_baselines(bundle)
+    out += _gold_and_baselines(bundle, rows)
     out += ["## Per queue", "", "| queue | recall | precision |", "|---|---|---|"]
     out += [
         f"| {q} | {_ci(v['recall'])} | {_ci(v['precision'])} |" for q, v in s["per_queue"].items()
@@ -308,6 +338,7 @@ def score_item(
         style=it.get("style", ""),
         split=it.get("split", ""),
         label_source=it.get("label_source", ""),
+        labelled_by=it.get("labelled_by") or "",
         subject=it["subject"],
         body=it["body"],
         queue=it["queue"],
