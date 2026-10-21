@@ -276,7 +276,7 @@ def test_build_set_prefers_gold_and_records_the_source(settings):
     ]
     gold = [
         tl.GoldLabel(id="tc-001", queue="oas", priority="urgent"),
-        tl.GoldLabel(id="tc-003", queue="sin", priority="normal"),
+        tl.GoldLabel(id="tc-003", queue="sin", priority="normal", labelled_by="model-agreed:a,b"),
     ]
     items = tl.build_set(cands, silver, gold, settings)
     by = {i["id"]: i for i in items}
@@ -289,6 +289,11 @@ def test_build_set_prefers_gold_and_records_the_source(settings):
     assert (by["tc-001"]["silver_queue"], by["tc-001"]["silver_priority"]) == ("ei", "low")
     assert by["tc-002"]["label_source"] == "silver" and by["tc-002"]["gold_queue"] is None
     assert by["tc-003"]["label_source"] == "gold" and by["tc-003"]["silver_queue"] is None
+    assert [by[k]["labelled_by"] for k in ("tc-001", "tc-002", "tc-003")] == [
+        "human",
+        None,
+        "model-agreed:a,b",
+    ]
     assert all(i["split"] == tl.split_of(i["id"], settings) for i in items)
     assert all(i["queue"] in QUEUES and i["priority"] in PRIORITIES for i in items)
 

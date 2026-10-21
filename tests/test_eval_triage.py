@@ -11,10 +11,11 @@ from support_desk_assistant.evals import triage as ev
 Z = 1.96
 
 
-def item(i, queue, priority, style="plain", split="dev", source="silver"):
+def item(i, queue, priority, style="plain", split="dev", source="silver", by=None):
     return {
         "split": split,
         "label_source": source,
+        "labelled_by": by,
         "id": f"tt-{i:03d}",
         "subject": f"s{i}",
         "body": f"body {i}",
@@ -25,9 +26,9 @@ def item(i, queue, priority, style="plain", split="dev", source="silver"):
 
 
 ITEMS = [
-    item(1, "ei", "urgent", source="gold"),
+    item(1, "ei", "urgent", source="gold", by="human"),
     item(2, "ei", "low", "short"),
-    item(3, "cpp", "high", "emotional", split="test", source="gold"),
+    item(3, "cpp", "high", "emotional", split="test", source="gold", by="model-agreed:m1,m2"),
     item(4, "oas", "normal", split="test"),
 ]
 # What the fake model answers for each ticket body.
@@ -149,8 +150,12 @@ def test_markdown_and_files(settings, tmp_path):
         "## Confusion",
         "Misses (3)",
         "tt-003",
+        "## Gold subset (blind labels, n=2)",
+        "Labels by source: human 1, model-agreed 1. Model-agreed labels were not reviewed",
+        "**Human-labelled subset (n=1)**",
     ):
         assert needle in md
+    assert "by a person, n=" not in md
     paths = ev.write_results(tmp_path / "out", meta, summary, rows)
     assert [p.suffix for p in paths] == [".jsonl", ".json", ".md"]
     lines = [json.loads(line) for line in paths[0].read_text().splitlines()]
@@ -203,8 +208,24 @@ def test_bundle_has_gold_view_and_two_baselines(settings):
     bundle = ev.summarize_bundle(rows, [i for i in ITEMS if i["split"] == "dev"], settings)
     assert bundle["all"]["n"] == 4
     assert bundle["gold"]["n"] == 2  # tt-001 and tt-003 carry gold labels
+    assert bundle["gold_human"]["n"] == 1  # only tt-001 was labelled by a person
     assert set(bundle["baselines"]) == {"majority (dev labels)", "keywords"}
     assert bundle["baselines"]["majority (dev labels)"]["n"] == 4
+
+
+def test_rows_carry_who_labelled(settings):
+    rows = rows_for(settings)
+    assert [r.labelled_by for r in rows] == ["human", "", "model-agreed:m1,m2", ""]
+
+
+def test_no_human_table_without_human_labels(settings, tmp_path):
+    items = [dict(i, labelled_by="model-agreed:m1,m2") if i["labelled_by"] else i for i in ITEMS]
+    rows = rows_for(settings, items=items)
+    bundle = ev.summarize_bundle(rows, items, settings)
+    assert bundle["gold_human"] is None
+    lines = ev._gold_and_baselines(bundle, rows)
+    assert "Labels by source: human 0, model-agreed 2." in lines[2]
+    assert not any("Human-labelled subset" in line for line in lines)
 
 
 def test_gold_view_is_absent_without_gold_labels(settings):

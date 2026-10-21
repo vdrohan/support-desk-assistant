@@ -185,8 +185,9 @@ def build_set(
     gold: Sequence[GoldLabel],
     settings: Settings,
 ) -> list[dict[str, Any]]:
-    """One item per ticket that has a usable label. The label is the gold label where a person
-    gave one, otherwise the silver label; ``label_source`` says which."""
+    """One item per ticket that has a usable label. The label is the gold label where the blind
+    gold sample has one, otherwise the silver label; ``label_source`` says which and
+    ``labelled_by`` who gave a gold label."""
     silver_by = {s.id: s for s in silver if s.status == STATUS_OK}
     gold_by = {g.id: g for g in gold}
     items = []
@@ -209,6 +210,7 @@ def build_set(
                 "queue": queue,
                 "priority": priority,
                 "label_source": "gold" if g else "silver",
+                "labelled_by": g.labelled_by if g else None,
                 "silver_queue": s.queue if s else None,
                 "silver_priority": s.priority if s else None,
                 "gold_queue": g.queue if g else None,
