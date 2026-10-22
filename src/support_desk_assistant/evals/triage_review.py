@@ -1,15 +1,20 @@
-"""uv run sda-eval-triage-review [--status | --export | --apply FILE]   (offline)
+"""uv run sda-eval-triage-review [--status | --terminal | --show | --export | --apply FILE]
+(offline)
 
-Blind labelling by a person. ``--export`` writes a page with a stratified sample of tickets
-(the sample is chosen from the silver labels, but they are not shown): each card shows only the
-subject and body, with empty queue and priority dropdowns, and a Skip button for tickets that
-are not a real request or that the reviewer cannot decide. "Copy decisions" copies
+Blind labelling by a person. The sample is a stratified draw of tickets (chosen from the silver
+labels, which are never shown). ``--terminal`` asks about one ticket at a time and records each
+answer at once, so you can quit and come back. ``--export`` writes a page instead: each card
+shows only the subject and body, with empty queue and priority dropdowns, and a Skip button for
+tickets that are not a real request or that the reviewer cannot decide. "Copy decisions" copies
 ``<id> <queue> <priority>`` / ``<id> skip`` lines; ``--apply`` records them as gold labels
-(docs/decisions.md #28).
+(``--labelled-by`` says who made them: a model session must not be recorded as ``human``).
+``--show`` prints the pending sample as plain text for a reviewer that reads it (docs/decisions.md
+#28, #29).
 """
 
 import argparse
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from html import escape
 from pathlib import Path
@@ -47,11 +52,13 @@ class Decision:
     action: str  # "label" | "skip"
     queue: str | None = None
     priority: str | None = None
+    unsure: bool = False  # the labeller was torn between two labels (a trailing "?")
 
 
 def parse_decisions(text: str) -> tuple[dict[str, Decision], list[str]]:
-    """``<id> <queue> <priority>`` or ``<id> skip`` lines. Blank lines and ``#`` comments are
-    ignored; a malformed line is reported, not fatal; if an id repeats, the last line wins."""
+    """``<id> <queue> <priority> [?]`` or ``<id> skip`` lines; a trailing ``?`` marks a label the
+    labeller was unsure of. Blank lines and ``#`` comments are ignored; a malformed line is
+    reported, not fatal; if an id repeats, the last line wins."""
     decisions: dict[str, Decision] = {}
     problems: list[str] = []
     for number, line in enumerate(text.splitlines(), 1):
@@ -59,12 +66,15 @@ def parse_decisions(text: str) -> tuple[dict[str, Decision], list[str]]:
         if not line or line.startswith("#"):
             continue
         parts = line.split()
+        unsure = len(parts) == 4 and parts[3] == "?"
+        if unsure:
+            parts = parts[:3]
         if len(parts) == 2 and parts[1].lower() == "skip":
             decision = Decision("skip")
         elif len(parts) == 3 and parts[1].lower() in QUEUES and parts[2].lower() in PRIORITIES:
-            decision = Decision("label", parts[1].lower(), parts[2].lower())
+            decision = Decision("label", parts[1].lower(), parts[2].lower(), unsure)
         else:
-            problems.append(f"line {number}: expected '<id> <queue> <priority>' or '<id> skip'")
+            problems.append(f"line {number}: expected '<id> <queue> <priority> [?]' or '<id> skip'")
             continue
         if parts[0] in decisions and decisions[parts[0]] != decision:
             problems.append(f"line {number}: {parts[0]} appears twice; using the last")
@@ -81,10 +91,13 @@ class ApplyReport:
 
 
 def apply_decisions(
-    text: str, candidates: list[TicketCandidate], settings: Settings
+    text: str,
+    candidates: list[TicketCandidate],
+    settings: Settings,
+    labelled_by: str = "human",
 ) -> ApplyReport:
-    """Record each decision as a gold label (or a skip). Safe to run again: a decision already
-    on record is left alone."""
+    """Record each decision as a gold label (or a skip), saying who made it. Safe to run again:
+    a decision already on record is left alone."""
     decisions, problems = parse_decisions(text)
     report = ApplyReport(problems=problems)
     state_path, gold_path = settings.triage_review_state_path, settings.triage_gold_path
@@ -106,11 +119,25 @@ def apply_decisions(
             report.skipped.append(tid)
         else:
             assert d.queue and d.priority
-            gold.append(GoldLabel(id=tid, queue=d.queue, priority=d.priority))
+            gold.append(
+                GoldLabel(
+                    id=tid,
+                    queue=d.queue,
+                    priority=d.priority,
+                    labelled_by=labelled_by,
+                    unsure=d.unsure,
+                )
+            )
             report.labelled.append(tid)
     write_jsonl(gold_path, gold)
     save_state(state_path, state)
     return report
+
+
+def pending_all(candidates: list[TicketCandidate], settings: Settings) -> list[TicketCandidate]:
+    """Every candidate with no decision on record: for a reviewer that labels the whole set."""
+    state = load_state(settings.triage_review_state_path)
+    return [c for c in candidates if c.id not in state]
 
 
 def pending_sample(
@@ -141,6 +168,81 @@ def status_lines(
             f"priority {agree['priority']}, both {agree['both']}"
         )
     return lines
+
+
+# --- Terminal review -------------------------------------------------------------
+
+PRIORITY_KEYS = {"u": "urgent", "h": "high", "n": "normal", "l": "low"}
+
+TERMINAL_RULES = """\
+Queue: the program the main request is about (ei, cpp, oas, sin, passport), or other for
+anything else or no real request.
+Priority, by what is at stake and by when, not by tone (u, h, n, l also work):
+  urgent: money or status at immediate risk, a deadline within 7 days, someone else using the
+          person's SIN, a passport lost abroad, travel or a job start within 7 days that
+          needs the document
+  high:   time-bound but not within days: a stuck or overdue claim, a wrong payment, an
+          appeal, a trip or deadline within about a month
+  normal: a question about their own situation, no time pressure
+  low:    general information, no time pressure, nothing to fix
+Answer '<queue> <priority>' (for example 'ei h'), 'skip' (not a real request, or unsure) or
+'quit'.
+"""
+
+
+def terminal_decision(answer: str) -> str | None:
+    """'ei h' / 'passport urgent' / 'skip' -> the decision text for ``apply_decisions``;
+    anything else -> None."""
+    parts = answer.lower().split()
+    if parts == ["skip"]:
+        return "skip"
+    if len(parts) == 2:
+        queue, priority = parts[0], PRIORITY_KEYS.get(parts[1], parts[1])
+        if queue in QUEUES and priority in PRIORITIES:
+            return f"{queue} {priority}"
+    return None
+
+
+def render_text(candidates: list[TicketCandidate]) -> str:
+    """The pending sample as plain text: id, subject, body, nothing else (blind)."""
+    return "\n\n".join(
+        f"=== {c.id} ===\nSubject: {c.subject or '(no subject)'}\n\n{c.body}" for c in candidates
+    )
+
+
+def review_in_terminal(
+    candidates: list[TicketCandidate],
+    silver: list[SilverLabel],
+    settings: Settings,
+    *,
+    read: Callable[[str], str] = input,
+    write: Callable[[str], None] = print,
+) -> ApplyReport:
+    """One pending ticket at a time, blind (no draft topic, no silver label). Each answer is
+    recorded at once through ``apply_decisions``; ``quit`` (or end of input) stops."""
+    queue, _ = pending_sample(candidates, silver, settings)
+    total = ApplyReport()
+    write(TERMINAL_RULES)
+    for number, c in enumerate(queue, 1):
+        subject = c.subject or "(no subject)"
+        write(f"\n[{number}/{len(queue)}] {c.id}\nSubject: {subject}\n\n{c.body}\n")
+        while True:
+            try:
+                answer = read("> ").strip()
+            except EOFError:
+                return total
+            if answer.lower() in ("q", "quit"):
+                return total
+            decision = terminal_decision(answer)
+            if decision is not None:
+                break
+            write("expected '<queue> <priority>', 'skip' or 'quit'")
+        report = apply_decisions(f"{c.id} {decision}\n", candidates, settings)
+        total.labelled += report.labelled
+        total.skipped += report.skipped
+        total.unchanged += report.unchanged
+        total.problems += report.problems
+    return total
 
 
 # --- Phone page ------------------------------------------------------------------
@@ -328,16 +430,43 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sda-eval-triage-review", description=__doc__)
     group = parser.add_mutually_exclusive_group()
     group.add_argument("--status", action="store_true", help="show progress (default)")
+    group.add_argument("--terminal", action="store_true", help="label tickets here, one by one")
+    group.add_argument("--show", action="store_true", help="print the pending sample, blind")
+    parser.add_argument(
+        "--all", action="store_true", help="with --show: every undecided ticket, not the sample"
+    )
     group.add_argument("--export", action="store_true", help="write the blind labelling page")
     group.add_argument("--apply", metavar="FILE", help="record a decisions file as gold labels")
+    parser.add_argument(
+        "--labelled-by",
+        default="human",
+        help="who made the decisions in --apply (default human; a model session says so)",
+    )
     args = parser.parse_args(argv)
+    if args.all and not args.show:
+        parser.error("--all goes with --show")
 
     candidates = load_candidates(settings.triage_candidates_path)
     silver = load_jsonl(settings.triage_silver_path, SilverLabel)
-    if not candidates or not silver:
+    whole_set = bool(args.apply) or (args.show and args.all)  # no silver-chosen sample involved
+    if not candidates or (not silver and not whole_set):
         print("need candidates and silver labels: run sda-eval-triage-draft and -label first")
+        print("(or label every ticket: --show --all, then --apply FILE --labelled-by NAME)")
         return 2
-    if args.export:
+    if args.terminal:
+        report = review_in_terminal(candidates, silver, settings)
+        print(f"\nlabelled {len(report.labelled)}, skipped {len(report.skipped)}")
+        for problem in report.problems:
+            print(f"  problem: {problem}")
+    elif args.show:
+        queue = (
+            pending_all(candidates, settings)
+            if args.all
+            else pending_sample(candidates, silver, settings)[0]
+        )
+        print(render_text(queue))
+        return 0
+    elif args.export:
         queue, shortfalls = pending_sample(candidates, silver, settings)
         export_html(queue, settings.triage_review_html_path)
         print(f"wrote {settings.triage_review_html_path} ({len(queue)} tickets to label)")
@@ -345,13 +474,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  shortfall: {s}")
         return 0
     if args.apply:
-        report = apply_decisions(Path(args.apply).read_text(encoding="utf-8"), candidates, settings)
+        text = Path(args.apply).read_text(encoding="utf-8")
+        report = apply_decisions(text, candidates, settings, args.labelled_by)
         print(
             f"labelled {len(report.labelled)}, skipped {len(report.skipped)}, "
             f"unchanged {len(report.unchanged)}"
         )
         for problem in report.problems:
             print(f"  problem: {problem}")
+        if not silver:
+            gold = load_jsonl(settings.triage_gold_path, GoldLabel)
+            print(f"labels on record: {len(gold)} of {len(candidates)} tickets")
+            return 0
     print("\n".join(status_lines(candidates, silver, settings)))
     return 0
 

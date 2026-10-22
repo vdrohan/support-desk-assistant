@@ -22,7 +22,13 @@ from support_desk_assistant.triage.pipeline import (
 from support_desk_assistant.triage.schema import PRIORITIES, QUEUES, TriageResult, output_schema
 from support_desk_assistant.triage.store import STATUS_FAILED, STATUS_TRIAGED, TicketStore
 
-GOOD = {"rationale": "Payments stopped.", "queue": "ei", "priority": "urgent"}
+GOOD = {
+    "rationale": "Payments stopped.",
+    "queue": "ei",
+    "priority": "urgent",
+    "queue_confidence": "high",
+    "priority_confidence": "medium",
+}
 
 
 def raw(payload=GOOD, stop="end_turn", usage=(120, 40)):
@@ -59,7 +65,13 @@ def test_queues_and_priorities():
 
 
 def test_rationale_comes_before_the_labels():
-    assert list(output_schema()["properties"]) == ["rationale", "queue", "priority"]
+    assert list(output_schema()["properties"]) == [
+        "rationale",
+        "queue",
+        "priority",
+        "queue_confidence",
+        "priority_confidence",
+    ]
 
 
 def test_queues_match_the_corpus_programs():
@@ -76,7 +88,7 @@ def test_parse_response_statuses():
     assert parse_response(raw()) == (TriageResult(**GOOD), STATUS_OK)
     assert parse_response(raw(stop="refusal")) == (None, STATUS_REFUSAL)
     assert parse_response(raw(stop="max_tokens")) == (None, STATUS_MAX_TOKENS)
-    assert parse_response(raw({"rationale": "x", "queue": "tax", "priority": "urgent"})) == (
+    assert parse_response(raw({**GOOD, "queue": "tax"})) == (
         None,
         STATUS_INVALID,
     )
@@ -165,3 +177,43 @@ def test_store_survives_reopen_and_binds_values_safely(tmp_path):
     make_ticket(TicketStore(path), subject="x'); DROP TABLE tickets;--")
     again = TicketStore(path)
     assert again.get(1).subject == "x'); DROP TABLE tickets;--"
+
+
+def test_a_database_from_before_escalation_is_migrated(tmp_path):
+    import sqlite3
+
+    path = tmp_path / "old.sqlite"
+    with sqlite3.connect(path) as conn:
+        conn.executescript(
+            """
+            CREATE TABLE tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, created_at TEXT NOT NULL,
+                subject TEXT NOT NULL, body TEXT NOT NULL, status TEXT NOT NULL,
+                queue TEXT, priority TEXT, rationale TEXT, model TEXT NOT NULL,
+                cost_cad REAL NOT NULL, latency_ms INTEGER NOT NULL);
+            INSERT INTO tickets VALUES (1,'t','s','b','triaged','ei','low','r','m',0,1);
+            INSERT INTO tickets VALUES (2,'t','s','b','triage_failed',NULL,NULL,NULL,'m',0,1);
+            """
+        )
+    store = TicketStore(path)
+    old_ok, old_failed = store.get(1), store.get(2)
+    assert not old_ok.needs_review and old_ok.escalation_reasons == ()
+    assert old_failed.needs_review and old_failed.escalation_reasons == ("triage_failed",)
+    new = make_ticket(
+        store, needs_review=True, escalation_reasons=("urgent", "low_queue_confidence")
+    )
+    assert new.escalation_reasons == ("urgent", "low_queue_confidence")
+    assert [t.id for t in TicketStore(path).list(needs_review=True)] == [3, 2]  # reopen is safe
+    assert [t.id for t in store.list(needs_review=False)] == [1]
+
+
+def test_thinking_and_effort_overrides_reach_the_request_and_the_cache_key():
+    base = Settings()
+    plain = build_request("SYS", "msg", base)
+    assert plain["thinking"] == {"type": "disabled"} and plain["output_config"]["effort"] == "low"
+    deep = base.model_copy(deep=True)
+    deep.triage.thinking, deep.triage.effort = "adaptive", "medium"
+    request = build_request("SYS", "msg", deep)
+    assert request["thinking"] == {"type": "adaptive"}
+    assert request["output_config"]["effort"] == "medium"
+    assert request_key("SYS", "msg", base) != request_key("SYS", "msg", deep)

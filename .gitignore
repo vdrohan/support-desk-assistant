@@ -242,6 +242,10 @@ data/eval/triage_candidates.jsonl
 data/eval/triage_silver.jsonl
 data/eval/triage_review_state.json
 data/eval/triage_review.html
+data/eval/triage_candidates_v2.jsonl
+data/eval/triage_silver_v2.jsonl
+data/eval/triage_review_state_v2.json
+data/eval/triage_review_v2.html
 
 # local Claude Code worktrees
 .claude/worktrees/

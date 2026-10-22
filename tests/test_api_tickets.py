@@ -6,7 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from support_desk_assistant.api.app import create_app
-from support_desk_assistant.config import Settings, TriageSettings
+from support_desk_assistant.config import EscalationSettings, Settings, TriageSettings
 from support_desk_assistant.triage.pipeline import (
     STATUS_OK,
     STATUS_REFUSAL,
@@ -20,7 +20,13 @@ from support_desk_assistant.triage.store import TicketStore
 def ok(queue="ei", priority="urgent"):
     return TriageOutcome(
         status=STATUS_OK,
-        result=TriageResult(rationale="Because.", queue=queue, priority=priority),
+        result=TriageResult(
+            rationale="Because.",
+            queue=queue,
+            priority=priority,
+            queue_confidence="high",
+            priority_confidence="high",
+        ),
         model="claude-haiku-5-5",
         cost_cad=0.0004,
         latency_ms=700,
@@ -61,6 +67,124 @@ def test_create_then_get(tmp_path):
     assert client.get("/tickets/1").json() == t
 
 
+def test_an_urgent_ticket_keeps_its_confidences_and_is_not_doubtful_by_default(tmp_path):
+    client, _ = make(tmp_path)
+    t = client.post("/tickets", json={"body": "My EI payment stopped"}).json()
+    assert (t["queue_confidence"], t["priority_confidence"]) == ("high", "high")
+    assert t["priority"] == "urgent" and t["needs_review"] is False  # it tops the queue instead
+
+
+def test_the_urgent_rule_can_be_switched_on(tmp_path):
+    client, _ = make(tmp_path, escalation=EscalationSettings(on_urgent=True))
+    t = client.post("/tickets", json={"body": "My EI payment stopped"}).json()
+    assert t["needs_review"] is True and t["escalation_reasons"] == ["urgent"]
+
+
+def test_a_confident_ordinary_ticket_is_left_alone(tmp_path):
+    client, _ = make(tmp_path, ok("ei", "normal"))
+    t = client.post("/tickets", json={"body": "How do I update my address?"}).json()
+    assert t["needs_review"] is False and t["escalation_reasons"] == []
+
+
+def test_low_confidence_escalates_and_the_floor_comes_from_settings(tmp_path):
+    unsure = TriageOutcome(
+        status=STATUS_OK,
+        result=TriageResult(
+            rationale="r",
+            queue="ei",
+            priority="normal",
+            queue_confidence="medium",
+            priority_confidence="low",
+        ),
+        model="m",
+    )
+    client, _ = make(tmp_path, unsure)  # shipped floors: queue below high, priority off
+    t = client.post("/tickets", json={"body": "x"}).json()
+    assert t["escalation_reasons"] == ["low_queue_confidence"]
+    strict, _ = make(
+        tmp_path / "strict",
+        unsure,
+        escalation=EscalationSettings(min_queue_confidence="low", min_priority_confidence="medium"),
+    )
+    t = strict.post("/tickets", json={"body": "x"}).json()
+    assert t["escalation_reasons"] == ["low_priority_confidence"]
+
+
+def test_needs_review_filter(tmp_path):
+    client, stub = make(tmp_path)
+    for queue, priority in [("ei", "urgent"), ("cpp", "low"), ("other", "low")]:
+        stub.result = ok(queue, priority)
+        client.post("/tickets", json={"body": f"{queue}-{priority}"})
+    assert [t["id"] for t in client.get("/tickets?needs_review=true").json()] == [3]
+    assert [t["id"] for t in client.get("/tickets?needs_review=false").json()] == [2, 1]
+    assert client.get("/tickets?needs_review=maybe").status_code == 422
+
+
+def second(result, cost=0.0009, latency=1200):
+    def run(subject, body):
+        return TriageOutcome(
+            status=STATUS_OK,
+            result=result,
+            model="claude-haiku-5-5",
+            cost_cad=cost,
+            latency_ms=latency,
+        )
+
+    return run
+
+
+def made(tmp_path, first, second_fn, **settings_kw):
+    app = create_app(
+        Settings(**settings_kw),
+        ask_fn=lambda *a: None,
+        triage_fn=Stub(first),
+        store=TicketStore(tmp_path / "t.sqlite"),
+        second_fn=second_fn,
+    )
+    return TestClient(app, raise_server_exceptions=False)
+
+
+def test_a_disagreeing_second_pass_escalates_and_its_cost_is_added(tmp_path):
+    other = ok("ei", "high").result  # the first pass says urgent
+    client = made(tmp_path, ok("ei", "urgent"), second(other))
+    t = client.post("/tickets", json={"body": "x"}).json()
+    assert t["needs_review"] is True and t["escalation_reasons"] == ["second_opinion_differs"]
+    assert t["priority"] == "urgent"  # the stored label is still the first pass
+    assert t["cost_cad"] == pytest.approx(0.0004 + 0.0009) and t["latency_ms"] == 700 + 1200
+
+
+def test_an_agreeing_second_pass_leaves_the_ticket_alone(tmp_path):
+    first = ok("ei", "normal")
+    t = made(tmp_path, first, second(first.result)).post("/tickets", json={"body": "x"}).json()
+    assert t["needs_review"] is False and t["escalation_reasons"] == []
+
+
+def test_a_second_pass_that_gives_nothing_counts_as_disagreement(tmp_path):
+    nothing = lambda s, b: TriageOutcome(status=STATUS_REFUSAL, result=None, model="m")  # noqa: E731
+    t = made(tmp_path, ok("ei", "normal"), nothing).post("/tickets", json={"body": "x"}).json()
+    assert t["escalation_reasons"] == ["second_opinion_differs"]
+
+
+def test_no_second_pass_runs_when_the_rule_is_off_or_triage_failed(tmp_path):
+    calls = []
+
+    def spy(subject, body):
+        calls.append(body)
+        return ok("ei", "high")
+
+    off = made(
+        tmp_path / "a",
+        ok("ei", "normal"),
+        spy,
+        escalation=EscalationSettings(on_disagreement=False),
+    )
+    assert off.post("/tickets", json={"body": "x"}).json()["escalation_reasons"] == []
+    failed = TriageOutcome(status=STATUS_REFUSAL, result=None, model="m")
+    on = made(tmp_path / "b", failed, spy)
+    assert on.post("/tickets", json={"body": "x"}).json()["escalation_reasons"] == ["triage_failed"]
+    assert calls == []
+
+
 def test_subject_is_optional(tmp_path):
     client, stub = make(tmp_path)
     assert client.post("/tickets", json={"body": "hello"}).status_code == 201
@@ -73,6 +197,8 @@ def test_failed_triage_is_kept_for_a_person(tmp_path):
     t = client.post("/tickets", json={"body": "x"}).json()
     assert t["status"] == "triage_failed"
     assert t["queue"] is None and t["priority"] is None and t["rationale"] is None
+    assert t["queue_confidence"] is None and t["priority_confidence"] is None
+    assert t["needs_review"] is True and t["escalation_reasons"] == ["triage_failed"]
     assert client.get(f"/tickets/{t['id']}").json()["status"] == "triage_failed"
 
 

@@ -2,7 +2,7 @@
 
 A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
 
-> **Status: Phase 1 done, Phase 2 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), so a human review is still pending. `POST /ask` serves the same pipeline over HTTP (`sda-api`). See [Roadmap](#roadmap).
+> **Status: Phases 1 and 2 done, Phase 3 in progress.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), so a human review is still pending. `POST /ask` serves the same pipeline over HTTP (`sda-api`). Ticket triage (`POST /tickets`: queue and priority) is scored on a reviewed set: on the test split, queue 0.90, priority 0.80, urgent recall 0.95 (19/20); most of the gold labels were agreed by model passes, not reviewed by a person (decision 28). Phase 3 adds escalation and the write-up. See [Roadmap](#roadmap).
 
 ## Problem
 
@@ -51,8 +51,8 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 |---|---|---|
 | 0 | Repo scaffolding: tooling, Compose with Qdrant, decision log | ✅ done |
 | 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels, human review and absent-fact labels pending), `/ask` endpoint (`sda-api`) ✅ | ✅ done |
-| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval pipeline (scenario-drafted tickets, silver and blind gold labels, dev/test split, baselines) and `sda-eval-triage` runner ✅, gold sample of 50: 10 labelled by the owner, 40 where three blind model passes (Sonnet, Sonnet, Opus) agreed, not reviewed by a person (decision 28); first scores (Haiku, test split, run once): queue 0.90, priority 0.80, urgent recall 0.95 (19/20); gold labels mostly model-agreed, see decision 28 | 🚧 in progress |
-| 3 | Escalation logic for low-confidence cases, plus a write-up with eval results | planned |
+| 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval pipeline (scenario-drafted tickets, silver and blind gold labels, dev/test split, baselines) and `sda-eval-triage` runner ✅, gold sample of 50: 10 labelled by the owner, 40 where three blind model passes (Sonnet, Sonnet, Opus) agreed, not reviewed by a person (decision 28); first scores (Haiku, test split, run once): queue 0.90, priority 0.80, urgent recall 0.95 (19/20); gold labels mostly model-agreed, human review of those 40 pending, see decision 28 | ✅ done |
+| 3 | Escalation logic for low-confidence cases (a `needs_review` flag, scored on a fresh triage set v2 with targets fixed before the test run), plus a write-up with eval results | 🚧 in progress |
 
 A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it. A reorder-only run (2a) and an independent audit of run 1 are in [docs/judge_audit_run1.md](docs/judge_audit_run1.md).
 
@@ -68,7 +68,7 @@ src/support_desk_assistant/
   api/           # FastAPI app
   ingest/        # crawl, chunk, embed, index (sda-ingest)
   retrieve.py    # vector search (sda-search)
-  triage/        # ticket triage: schema, pipeline, SQLite store
+  triage/        # ticket triage: schema, pipeline, escalation rules, SQLite store
   evals/         # eval harness (answers, retrieval, triage)
 docs/            # decisions and, later, the write-up
 compose.yaml     # Qdrant
@@ -146,15 +146,16 @@ Even the dry run needs `VOYAGE_API_KEY` and the Qdrant tunnel (it embeds and ret
 ### Triage tickets
 
 ```bash
-uv run sda-eval-triage-draft --yes          # Haiku drafts 150 tickets from scenarios, never from labels (about CA$0.10)
-uv run sda-eval-triage-label --yes --cap 9  # Sonnet labels all of them (silver); real cost about CA$1
-uv run sda-eval-triage-review --export      # blind page: you label a stratified sample (gold), no draft labels shown
-uv run sda-eval-triage-review --apply FILE  # record the copied decisions as gold labels
-uv run sda-eval-triage-label --build        # merge silver and gold into data/eval/triage_set_v1.jsonl with a dev/test split
+uv run sda-eval-triage-draft --yes          # Haiku drafts 200 tickets from scenarios, never from labels (about CA$0.10); near-duplicates of v1 are dropped. Paid API calls use Haiku only
+uv run sda-eval-triage-review --show --all  # prints every undecided ticket, blind; a reviewer writes '<id> <queue> <priority> [?]' lines
+uv run sda-eval-triage-review --apply FILE --labelled-by model-session:claude-sonnet-5-5   # record them (v2 was labelled by Claude in the session; '?' = unsure)
+uv run sda-eval-triage-review --terminal    # or: a person labels the stratified sample one ticket at a time (needs silver labels); quit and resume any time
+uv run sda-eval-triage-label --build        # merge the labels into data/eval/triage_set_v2.jsonl with a dev/test split
 uv run sda-eval-triage --split dev          # dry run; --yes scores the classifier on dev; --split test is scored once
+uv run sda-eval-escalation --split dev --second-opinion   # dry run; --yes scores the escalation policy on dev (tuning); --split test is scored once
 ```
 
-A ticket is triaged into one queue (`ei`, `cpp`, `oas`, `sin`, `passport`, `other`) and one priority (`urgent`, `high`, `normal`, `low`); the rules are in [prompts/triage.md](prompts/triage.md). Tickets are free text and can contain personal information: the SQLite store (`data/tickets.sqlite`, gitignored) keeps them as typed and they are sent to the Anthropic API, so don't put real SINs or passport numbers in them.
+A ticket is triaged into one queue (`ei`, `cpp`, `oas`, `sin`, `passport`, `other`) and one priority (`urgent`, `high`, `normal`, `low`), each with a `low`/`medium`/`high` confidence; the rules are in [prompts/triage.md](prompts/triage.md). A ticket goes to a person (`needs_review`, with `escalation_reasons`) when triage failed, the queue is `other`, the model's queue confidence is below high, or a second Haiku pass with thinking on labels it differently; urgent tickets top the queue by priority instead ([decisions #29](docs/decisions.md#29-escalation-rules-plus-the-classifiers-own-confidence-scored-on-a-fresh-set-with-the-targets-fixed-first)). Tickets are free text and can contain personal information: the SQLite store (`data/tickets.sqlite`, gitignored) keeps them as typed and they are sent to the Anthropic API, so don't put real SINs or passport numbers in them.
 
 ### Run the API
 
@@ -164,7 +165,7 @@ curl -s localhost:8000/ask -H 'content-type: application/json' \
   -d '{"question": "How many weeks of EI sickness benefits can I get?", "program": "ei"}'
 ```
 
-`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `POST /tickets` (`subject`, `body`) triages a ticket, stores it and returns its queue, priority and rationale; `GET /tickets/{id}` and `GET /tickets?queue=&priority=` read them back. `GET /health` is a liveness check. The API has no authentication and binds to `127.0.0.1` (`ApiSettings`); don't expose it without putting auth in front. Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only).
+`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `POST /tickets` (`subject`, `body`) triages a ticket, stores it and returns its queue, priority and rationale; `GET /tickets/{id}` and `GET /tickets?queue=&priority=&needs_review=` read them back; a ticket also carries `queue_confidence`, `priority_confidence`, `needs_review` and `escalation_reasons`. `/ask` adds `escalate` and `escalate_reason` (set when there is no answer: the retrieval gate, an abstention, failed citation validation or a generation failure). `GET /health` is a liveness check. The API has no authentication and binds to `127.0.0.1` (`ApiSettings`); don't expose it without putting auth in front. Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only).
 
 ## Disclaimer
 

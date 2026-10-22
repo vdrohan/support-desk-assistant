@@ -51,9 +51,9 @@ def build_request(system: str, user_message: str, settings: Settings) -> dict[st
         "max_tokens": cfg.max_tokens,
         "system": [{"type": "text", "text": system}],
         "messages": [{"role": "user", "content": user_message}],
-        "thinking": {"type": profile.thinking},
+        "thinking": {"type": cfg.thinking or profile.thinking},
         "output_config": {
-            "effort": profile.effort,
+            "effort": cfg.effort or profile.effort,
             "format": {"type": "json_schema", "schema": output_schema()},
         },
     }
@@ -70,8 +70,8 @@ def request_key(system: str, user_message: str, settings: Settings) -> str:
             "system": system,
             "user": user_message,
             "max_tokens": cfg.max_tokens,
-            "effort": profile.effort,
-            "thinking": profile.thinking,
+            "effort": cfg.effort or profile.effort,
+            "thinking": cfg.thinking or profile.thinking,
         }
     )
 

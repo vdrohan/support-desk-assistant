@@ -55,9 +55,10 @@ class FakeDrafter:
 def test_specs_follow_the_configured_mix(settings):
     cfg = settings.triage_eval
     specs = td.plan_specs(settings)
-    assert len(specs) == sum(cfg.style_counts.values()) == 150
+    total = sum(cfg.style_counts.values())
+    assert len(specs) == total
     assert Counter(s.style for s in specs) == Counter(cfg.style_counts)
-    assert sum(s.program == "other" for s in specs) == round(150 * cfg.other_share)
+    assert sum(s.program == "other" for s in specs) == round(total * cfg.other_share)
     per_program = Counter(s.program for s in specs if s.program != "other")
     assert max(per_program.values()) - min(per_program.values()) <= 1
     assert all(s.topic in cfg.other_topics for s in specs if s.program == "other")
@@ -87,7 +88,7 @@ def test_the_drafter_never_sees_a_label_or_the_rules(settings):
 
 def test_tasks_group_by_program(settings):
     tasks = td.plan_tasks(settings, TITLES)
-    assert sum(len(t.specs) for t in tasks) == 150
+    assert sum(len(t.specs) for t in tasks) == sum(settings.triage_eval.style_counts.values())
     for t in tasks:
         assert 1 <= len(t.specs) <= 3 and {s.program for s in t.specs} == {t.program}
         assert (len(t.hints) == 6) == (t.program != "other")
@@ -109,7 +110,8 @@ def test_run_tasks_assigns_ids_and_carries_the_scenario(settings):
     run = td.run_tasks(tasks, system="SYS", settings=settings, client=client)
     assert run.calls == 3 and not run.failures and not run.shortfalls
     n = sum(len(t.specs) for t in tasks)
-    assert [c.id for c in run.candidates] == [f"tc-{i:03d}" for i in range(1, n + 1)]
+    prefix = settings.triage_eval.id_prefix
+    assert [c.id for c in run.candidates] == [f"{prefix}-{i:03d}" for i in range(1, n + 1)]
     first = run.candidates[0]
     assert (first.topic, first.situation, first.style) == (
         tasks[0].specs[0].program,
@@ -144,6 +146,31 @@ def test_shortfall_failure_and_cap(settings):
     assert fresh.requests == [] and "spend cap" in capped.failures[0]
 
 
+def test_near_duplicates_are_dropped_against_earlier_sets_and_each_other(tmp_path):
+    def ticket(tid, subject, body):
+        return td.TicketCandidate(
+            id=tid, subject=subject, body=body, style="plain", topic="ei", situation="x"
+        )
+
+    text = "my payment stopped last week and I need to know when it restarts please"
+    earlier = tmp_path / "triage_set_v1.jsonl"
+    earlier.write_text(
+        json.dumps({"id": "tc-001", "subject": "Payment", "body": text}) + "\n", encoding="utf-8"
+    )
+    reference = td.load_reference([earlier, tmp_path / "missing.jsonl"])
+    assert list(reference) == ["triage_set_v1:tc-001"]
+    candidates = [
+        ticket("t2-001", "Payment", text + " thanks"),  # repeats the earlier ticket
+        ticket("t2-002", "Hello", "I lost my passport in Lisbon and fly home in ten days"),
+        ticket("t2-003", "Hello!", "I lost my passport in Lisbon and fly home in ten days"),
+        ticket("t2-004", "SIN", "How do I apply for a social insurance number as a student"),
+    ]
+    kept, dropped = td.drop_near_duplicates(candidates, reference, 0.6)
+    assert [c.id for c in kept] == ["t2-002", "t2-004"]
+    assert dropped == {"t2-001": "triage_set_v1:tc-001", "t2-003": "t2-002"}
+    assert td.drop_near_duplicates(candidates, {}, 1.01)[1] == {}
+
+
 def test_candidates_roundtrip(settings):
     run = td.run_tasks(
         td.plan_tasks(settings, TITLES)[:2], system="S", settings=settings, client=FakeDrafter()
@@ -163,7 +190,15 @@ def cand(i, style="plain"):
 
 
 def label_reply(queue, priority):
-    text = json.dumps({"rationale": "r", "queue": queue, "priority": priority})
+    text = json.dumps(
+        {
+            "rationale": "r",
+            "queue": queue,
+            "priority": priority,
+            "queue_confidence": "high",
+            "priority_confidence": "high",
+        }
+    )
     return {
         "stop_reason": "end_turn",
         "content": [{"type": "text", "text": text}],
@@ -325,6 +360,26 @@ def test_parse_decisions():
     assert len(problems) == 2 and "line 6" in problems[0] and "line 7" in problems[1]
 
 
+def test_a_trailing_question_mark_marks_an_unsure_label():
+    text = "tc-001 ei high ?\ntc-002 cpp low\ntc-003 skip ?\ntc-004 oas low maybe\n"
+    decisions, problems = tr.parse_decisions(text)
+    assert decisions["tc-001"] == tr.Decision("label", "ei", "high", unsure=True)
+    assert decisions["tc-002"].unsure is False
+    assert set(decisions) == {"tc-001", "tc-002"} and len(problems) == 2
+
+
+def test_unsure_travels_from_the_decision_to_the_set(settings):
+    cands = [cand(1), cand(2)]
+    tr.apply_decisions(
+        "tc-001 ei high ?\ntc-002 cpp low\n", cands, settings, labelled_by="model-session:x"
+    )
+    gold = tl.load_jsonl(settings.triage_gold_path, tl.GoldLabel)
+    assert [(g.id, g.unsure) for g in gold] == [("tc-001", True), ("tc-002", False)]
+    items = {i["id"]: i for i in tl.build_set(cands, [], gold, settings)}
+    assert items["tc-001"]["unsure"] is True and items["tc-002"]["unsure"] is False
+    assert items["tc-001"]["label_source"] == "gold" and items["tc-001"]["silver_queue"] is None
+
+
 def test_parse_decisions_repeat_last_wins_and_warns():
     decisions, problems = tr.parse_decisions("tc-001 ei urgent\ntc-001 skip\n")
     assert decisions["tc-001"].action == "skip" and "twice" in problems[0]
@@ -341,6 +396,66 @@ def test_apply_records_gold_and_skips_and_is_idempotent(settings):
     again = tr.apply_decisions(text, cands, settings)
     assert again.unchanged == ["tc-001", "tc-002"] and not again.labelled
     assert len(tl.load_jsonl(settings.triage_gold_path, tl.GoldLabel)) == 1
+
+
+def test_apply_records_who_made_the_decisions(settings):
+    cands = [cand(1), cand(2)]
+    tr.apply_decisions("tc-001 oas urgent\n", cands, settings)
+    tr.apply_decisions("tc-002 ei low\n", cands, settings, labelled_by="model-session:claude-x")
+    gold = tl.load_jsonl(settings.triage_gold_path, tl.GoldLabel)
+    assert [(g.id, g.labelled_by) for g in gold] == [
+        ("tc-001", "human"),
+        ("tc-002", "model-session:claude-x"),
+    ]
+
+
+def test_show_prints_only_the_ticket(settings, monkeypatch, capsys):
+    cands = [cand(i) for i in range(400)]
+    td.write_candidates(settings.triage_candidates_path, cands)
+    tl.write_jsonl(settings.triage_silver_path, silver_pool(settings))
+    monkeypatch.setattr(tr, "get_settings", lambda: settings)
+    assert tr.main(["--show"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("=== tc-") == 50 and "Subject: s" in out and "body " in out
+    for hidden in ("silver", "rationale", "urgent", "priority", "topic", "situation"):
+        assert hidden not in out.lower()
+    assert (
+        tr.main(["--apply", str(_write(settings, "tc-001 ei low\n")), "--labelled-by", "m:x"]) == 0
+    )
+    assert tl.load_jsonl(settings.triage_gold_path, tl.GoldLabel)[0].labelled_by == "m:x"
+
+
+def test_show_all_needs_no_silver_labels(settings, monkeypatch, capsys):
+    cands = [cand(i) for i in range(5)]
+    td.write_candidates(settings.triage_candidates_path, cands)
+    monkeypatch.setattr(tr, "get_settings", lambda: settings)
+    assert tr.main(["--show"]) == 2  # the sample is chosen from silver labels
+    capsys.readouterr()
+    tr.apply_decisions("tc-000 ei low\n", cands, settings)
+    assert tr.main(["--show", "--all"]) == 0
+    out = capsys.readouterr().out
+    assert out.count("=== tc-") == 4 and "=== tc-000 ===" not in out  # decided ones are skipped
+    path = _write(settings, "tc-001 cpp high ?\n")
+    assert tr.main(["--apply", str(path), "--labelled-by", "m:x"]) == 0
+    assert "labels on record: 2 of 5 tickets" in capsys.readouterr().out
+    with pytest.raises(SystemExit):
+        tr.main(["--all"])
+
+
+def test_the_labeller_refuses_to_call_anything_but_haiku(settings, monkeypatch, capsys):
+    td.write_candidates(settings.triage_candidates_path, [cand(1)])
+    monkeypatch.setattr(tl, "get_settings", lambda: settings)
+    assert settings.triage_eval.label_model == "claude-sonnet-5-5"
+    assert tl.main(["--yes", "--cap", "99"]) == 2
+    out = capsys.readouterr().out
+    assert "Haiku only" in out and not settings.triage_silver_path.exists()
+
+
+def _write(settings, text):
+    path = settings.triage_gold_path.with_name("decisions.txt")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
 
 
 def test_apply_reports_a_conflict(settings):
@@ -377,6 +492,47 @@ def test_pending_sample_excludes_decided_tickets(settings):
     tr.apply_decisions(f"{queue[0].id} skip\n{queue[1].id} ei low\n", cands, settings)
     again, _ = tr.pending_sample(cands, silver, settings)
     assert len(again) == 48 and queue[0].id not in {c.id for c in again}
+
+
+def test_terminal_decision_accepts_short_priorities():
+    assert tr.terminal_decision("ei h") == "ei high"
+    assert tr.terminal_decision("  Passport  URGENT ") == "passport urgent"
+    assert tr.terminal_decision("skip") == "skip"
+    for bad in ("", "ei", "tax high", "ei soon", "ei high now", "skip it"):
+        assert tr.terminal_decision(bad) is None
+
+
+def test_terminal_review_records_each_answer_and_resumes(settings):
+    cands = [cand(i) for i in range(400)]
+    silver = silver_pool(settings)
+    queue, _ = tr.pending_sample(cands, silver, settings)
+    shown: list[str] = []
+    answers = iter(["ei h", "nonsense", "skip", "other l", "quit", "never read"])
+    report = tr.review_in_terminal(
+        cands, silver, settings, read=lambda _: next(answers), write=shown.append
+    )
+    assert report.labelled == [queue[0].id, queue[2].id] and report.skipped == [queue[1].id]
+    gold = tl.load_jsonl(settings.triage_gold_path, tl.GoldLabel)
+    assert [(g.id, g.queue, g.priority, g.labelled_by) for g in gold] == [
+        (queue[0].id, "ei", "high", "human"),
+        (queue[2].id, "other", "low", "human"),
+    ]
+    text = "\n".join(shown)
+    assert queue[0].body in text and "expected '<queue> <priority>'" in text
+    for hidden in ("silver", "rationale", "topic", "situation"):  # blind: nothing but the ticket
+        assert hidden not in text.split("[1/50]")[1].lower()
+    again = tr.pending_sample(cands, silver, settings)[0]
+    assert len(again) == 47 and again[0].id == queue[3].id
+
+
+def test_terminal_review_stops_at_end_of_input(settings):
+    cands = [cand(i) for i in range(400)]
+
+    def eof(_prompt):
+        raise EOFError
+
+    report = tr.review_in_terminal(cands, silver_pool(settings), settings, read=eof, write=print)
+    assert not report.labelled and not report.skipped
 
 
 def test_status_shows_agreement_only_after_labelling(settings):

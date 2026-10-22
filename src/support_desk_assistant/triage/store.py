@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from support_desk_assistant.triage.escalate import REASON_FAILED
+
 STATUS_TRIAGED = "triaged"
 STATUS_FAILED = "triage_failed"
 
@@ -22,10 +24,36 @@ CREATE TABLE IF NOT EXISTS tickets (
     rationale TEXT,
     model TEXT NOT NULL,
     cost_cad REAL NOT NULL,
-    latency_ms INTEGER NOT NULL
+    latency_ms INTEGER NOT NULL,
+    queue_confidence TEXT,
+    priority_confidence TEXT,
+    needs_review INTEGER NOT NULL DEFAULT 0,
+    escalation_reasons TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS tickets_queue_priority ON tickets (queue, priority);
 """
+
+# Columns added by decision 29; a database created before them gets them from _migrate.
+_ESCALATION_COLUMNS = {
+    "queue_confidence": "TEXT",
+    "priority_confidence": "TEXT",
+    "needs_review": "INTEGER NOT NULL DEFAULT 0",
+    "escalation_reasons": "TEXT NOT NULL DEFAULT ''",
+}
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    have = {r["name"] for r in conn.execute("PRAGMA table_info(tickets)")}
+    for name, ddl in _ESCALATION_COLUMNS.items():
+        if name not in have:
+            conn.execute(f"ALTER TABLE tickets ADD COLUMN {name} {ddl}")  # noqa: S608
+    if "needs_review" not in have:
+        # A ticket whose triage failed before escalation existed still needs a person.
+        conn.execute(
+            "UPDATE tickets SET needs_review = 1, escalation_reasons = ? WHERE status = ?",
+            (REASON_FAILED, STATUS_FAILED),
+        )
+    conn.execute("CREATE INDEX IF NOT EXISTS tickets_needs_review ON tickets (needs_review)")
 
 
 @dataclass(frozen=True)
@@ -41,6 +69,17 @@ class Ticket:
     model: str
     cost_cad: float
     latency_ms: int
+    queue_confidence: str | None = None
+    priority_confidence: str | None = None
+    needs_review: bool = False
+    escalation_reasons: tuple[str, ...] = ()
+
+
+def _ticket(row: sqlite3.Row) -> Ticket:
+    data = dict(row)
+    data["needs_review"] = bool(data["needs_review"])
+    data["escalation_reasons"] = tuple(r for r in data["escalation_reasons"].split(",") if r)
+    return Ticket(**data)
 
 
 class TicketStore:
@@ -49,6 +88,7 @@ class TicketStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as conn:
             conn.executescript(_SCHEMA)
+            _migrate(conn)
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.path, timeout=10)
@@ -67,12 +107,17 @@ class TicketStore:
         model: str,
         cost_cad: float,
         latency_ms: int,
+        queue_confidence: str | None = None,
+        priority_confidence: str | None = None,
+        needs_review: bool = False,
+        escalation_reasons: tuple[str, ...] = (),
     ) -> Ticket:
         created_at = datetime.now(UTC).isoformat(timespec="seconds")
         with closing(self._connect()) as conn, conn:
             cur = conn.execute(
                 "INSERT INTO tickets (created_at, subject, body, status, queue, priority,"
-                " rationale, model, cost_cad, latency_ms) VALUES (?,?,?,?,?,?,?,?,?,?)",
+                " rationale, model, cost_cad, latency_ms, queue_confidence, priority_confidence,"
+                " needs_review, escalation_reasons) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (
                     created_at,
                     subject,
@@ -84,6 +129,10 @@ class TicketStore:
                     model,
                     cost_cad,
                     latency_ms,
+                    queue_confidence,
+                    priority_confidence,
+                    int(needs_review),
+                    ",".join(escalation_reasons),
                 ),
             )
             ticket_id = cur.lastrowid
@@ -94,13 +143,14 @@ class TicketStore:
     def get(self, ticket_id: int) -> Ticket | None:
         with closing(self._connect()) as conn:
             row = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
-        return Ticket(**row) if row else None
+        return _ticket(row) if row else None
 
     def list(
         self,
         *,
         queue: str | None = None,
         priority: str | None = None,
+        needs_review: bool | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[Ticket]:
@@ -111,10 +161,13 @@ class TicketStore:
         if priority is not None:
             clauses.append("priority = ?")
             args.append(priority)
+        if needs_review is not None:
+            clauses.append("needs_review = ?")
+            args.append(int(needs_review))
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         with closing(self._connect()) as conn:
             rows = conn.execute(
                 f"SELECT * FROM tickets{where} ORDER BY id DESC LIMIT ? OFFSET ?",  # noqa: S608
                 (*args, limit, offset),
             ).fetchall()
-        return [Ticket(**r) for r in rows]
+        return [_ticket(r) for r in rows]

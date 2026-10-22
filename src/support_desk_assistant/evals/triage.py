@@ -53,11 +53,30 @@ class Row:
     status: str = "pending"
     pred_queue: str | None = None
     pred_priority: str | None = None
+    pred_queue_confidence: str | None = None
+    pred_priority_confidence: str | None = None
+    # The second opinion (same model, thinking on); None when no second pass was run.
+    second_status: str | None = None
+    second_queue: str | None = None
+    second_priority: str | None = None
     rationale: str | None = None
+    # A ticket the labeller was unsure of, or where silver and gold differ: one a person
+    # would also hesitate over (used by the escalation eval).
+    ambiguous: bool = False
     cache_hit: bool = False
     cost_cad: float = 0.0
     cost_cad_list: float = 0.0
     extra: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def second_agrees(self) -> bool | None:
+        """None if no second pass was run; False if it failed or labelled differently."""
+        if self.second_status is None:
+            return None
+        return self.second_status == "ok" and (self.second_queue, self.second_priority) == (
+            self.pred_queue,
+            self.pred_priority,
+        )
 
     @property
     def queue_ok(self) -> bool:
@@ -177,13 +196,18 @@ def _labelled_by_line(rows: Sequence[Row]) -> str:
             counts["human"] += 1
         elif r.labelled_by.startswith("model-agreed"):
             counts["model-agreed"] += 1
+        elif r.labelled_by.startswith("model-session"):
+            counts["model-session"] += 1
         else:
             counts[r.labelled_by or "unknown"] += 1
-    other = sorted(k for k in counts if k not in ("human", "model-agreed"))
-    parts = [f"{k} {counts[k]}" for k in ["human", "model-agreed", *other]]
+    other = sorted(k for k in counts if k not in ("human", "model-agreed", "model-session"))
+    shown = ["human", "model-agreed", *(["model-session"] if counts["model-session"] else [])]
+    parts = [f"{k} {counts[k]}" for k in [*shown, *other]]
     line = f"Labels by source: {', '.join(parts)}."
     if counts["model-agreed"]:
         line += " Model-agreed labels were not reviewed by a person."
+    if counts["model-session"]:
+        line += " Model-session labels are one model's reading, not reviewed by a person."
     return line
 
 
@@ -346,11 +370,24 @@ def score_item(
         status=outcome.status,
         pred_queue=r.queue if r else None,
         pred_priority=r.priority if r else None,
+        pred_queue_confidence=r.queue_confidence if r else None,
+        pred_priority_confidence=r.priority_confidence if r else None,
         rationale=r.rationale if r else None,
+        ambiguous=is_ambiguous(it),
         cache_hit=outcome.cache_hit,
         cost_cad=outcome.cost_cad,
     )
     return row, outcome
+
+
+def is_ambiguous(it: Mapping[str, Any]) -> bool:
+    """A ticket the labeller was unsure of, or a gold item whose silver label (queue or priority)
+    differs from the gold label: a ticket two readings did not settle."""
+    if it.get("unsure"):
+        return True
+    if it.get("label_source") != "gold" or it.get("silver_queue") is None:
+        return False
+    return (it.get("silver_queue"), it.get("silver_priority")) != (it["queue"], it["priority"])
 
 
 def list_cost_cad(outcome: TriageOutcome, settings: Settings, key_raw: Mapping[str, Any]) -> float:
@@ -435,11 +472,13 @@ def write_results(
     return [jsonl, summary_path, md]
 
 
-def test_already_scored(settings: Settings, dataset: Path) -> list[Path]:
+def test_already_scored(
+    settings: Settings, dataset: Path, prefix: str = RESULT_PREFIX
+) -> list[Path]:
     """Committed results of a test-split run on this exact dataset version."""
     sha = file_sha256(dataset)
     found = []
-    for path in sorted(settings.eval_results_dir.glob(f"{RESULT_PREFIX}_*.summary.json")):
+    for path in sorted(settings.eval_results_dir.glob(f"{prefix}_*.summary.json")):
         meta = json.loads(path.read_text(encoding="utf-8")).get("meta", {})
         if meta.get("split") == "test" and meta.get("dataset", {}).get("sha256") == sha:
             found.append(path)
