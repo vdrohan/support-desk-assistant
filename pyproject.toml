@@ -34,6 +34,7 @@ sda-eval-triage-draft = "support_desk_assistant.evals.triage_draft:main"
 sda-eval-triage-label = "support_desk_assistant.evals.triage_label:main"
 sda-eval-triage-review = "support_desk_assistant.evals.triage_review:main"
 sda-eval-triage = "support_desk_assistant.evals.triage:main"
+sda-eval-escalation = "support_desk_assistant.evals.escalation:main"
 
 [build-system]
 requires = ["uv_build>=0.12.23,<0.13"]

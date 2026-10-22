@@ -9,8 +9,9 @@ Dry run by default (docs/decisions.md #28).
 import argparse
 import json
 import random
+import re
 from collections import Counter
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,7 @@ from support_desk_assistant.triage.schema import QUEUES
 
 PROGRAMS: tuple[str, ...] = tuple(q for q in QUEUES if q != "other")
 NO_SITUATION = "none"
+WORD_RE = re.compile(r"\w+")  # unicode-aware: French tickets keep their accented words
 
 
 class DraftedTicket(BaseModel):
@@ -257,7 +259,7 @@ def run_tasks(
             counter += 1
             run.candidates.append(
                 TicketCandidate(
-                    id=f"tc-{counter:03d}",
+                    id=f"{cfg.id_prefix}-{counter:03d}",
                     subject=drafted.subject.strip(),
                     body=drafted.body.strip(),
                     style=spec.style,
@@ -266,6 +268,50 @@ def run_tasks(
                 )
             )
     return run
+
+
+def _words(subject: str, body: str) -> frozenset[str]:
+    return frozenset(WORD_RE.findall(f"{subject} {body}".lower()))
+
+
+def jaccard(a: frozenset[str], b: frozenset[str]) -> float:
+    return len(a & b) / len(a | b) if a | b else 0.0
+
+
+def load_reference(paths: Sequence[Path]) -> dict[str, tuple[str, str]]:
+    """``<file>:<id>`` -> (subject, body) for the tickets of earlier dataset files. A missing
+    file is skipped."""
+    found: dict[str, tuple[str, str]] = {}
+    for path in paths:
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            if line.strip():
+                row = json.loads(line)
+                found[f"{path.stem}:{row['id']}"] = (row["subject"], row["body"])
+    return found
+
+
+def drop_near_duplicates(
+    candidates: Sequence[TicketCandidate],
+    reference: Mapping[str, tuple[str, str]],
+    threshold: float,
+) -> tuple[list[TicketCandidate], dict[str, str]]:
+    """Drop a candidate that is a near-duplicate (word-set Jaccard at or above ``threshold``) of
+    a reference ticket or of an earlier kept candidate. Returns the kept candidates and
+    {dropped id: the id it repeats}. Ids are not renumbered."""
+    seen = {rid: _words(*text) for rid, text in reference.items()}
+    kept: list[TicketCandidate] = []
+    dropped: dict[str, str] = {}
+    for c in candidates:
+        words = _words(c.subject, c.body)
+        twin = next((rid for rid, w in seen.items() if jaccard(words, w) >= threshold), None)
+        if twin is not None:
+            dropped[c.id] = twin
+            continue
+        seen[c.id] = words
+        kept.append(c)
+    return kept, dropped
 
 
 def write_candidates(path: Path, candidates: Sequence[TicketCandidate]) -> None:
@@ -319,12 +365,20 @@ def main(argv: list[str] | None = None) -> int:
         print("dry run: nothing sent; add --yes to draft.")
         return 0
     run = run_tasks(tasks, system=system, settings=settings, cap_cad=args.cap)
-    write_candidates(out, run.candidates)
-    styles = Counter(c.style for c in run.candidates)
+    reference = load_reference(settings.triage_reference_paths)
+    kept, dropped = drop_near_duplicates(run.candidates, reference, cfg.duplicate_jaccard)
+    write_candidates(out, kept)
+    styles = Counter(c.style for c in kept)
     print(
-        f"wrote {len(run.candidates)} candidates to {out} "
+        f"wrote {len(kept)} candidates to {out} "
         f"({run.calls} calls, {run.cache_hits} cached); styles {dict(styles)}"
     )
+    print(
+        f"dropped {len(dropped)} near-duplicates (Jaccard >= {cfg.duplicate_jaccard}) "
+        f"against {len(reference)} earlier tickets and each other"
+    )
+    for tid, twin in dropped.items():
+        print(f"  dropped {tid}: repeats {twin}")
     for line in (*run.failures, *run.shortfalls):
         print(f"  problem: {line}")
     return 1 if run.failures else 0
