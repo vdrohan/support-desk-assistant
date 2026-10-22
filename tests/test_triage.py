@@ -198,6 +198,7 @@ def test_a_database_from_before_escalation_is_migrated(tmp_path):
     store = TicketStore(path)
     old_ok, old_failed = store.get(1), store.get(2)
     assert not old_ok.needs_review and old_ok.escalation_reasons == ()
+    assert old_ok.reviewed_at is None and old_ok.final_queue is None and old_ok.review_note == ""
     assert old_failed.needs_review and old_failed.escalation_reasons == ("triage_failed",)
     new = make_ticket(
         store, needs_review=True, escalation_reasons=("urgent", "low_queue_confidence")

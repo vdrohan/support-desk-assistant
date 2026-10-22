@@ -481,3 +481,14 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - A numeric self-reported confidence: poorly calibrated and harder to define than three levels.
   - Sampling the same model several times and escalating on disagreement: Haiku 5.5 and Sonnet 5.5 reject non-default sampling parameters (decision 16), so the samples would barely differ.
   - Tuning the floors on the v1 test split, or reading its misses for signals: it is spent, and a threshold chosen there would be scored on data that shaped it.
+
+## 30. Override: a person records their decision beside the model's answer
+
+- **Decision:** `POST /tickets/{id}/override` takes optional `queue`, `priority` and `note` and stores the person's decision as `final_queue`, `final_priority`, `review_note` and `reviewed_at`. The model's `queue`, `priority` and `needs_review` are never changed, so every flagged ticket keeps both answers and the disagreement can be counted later. Leaving `queue` and `priority` out confirms the model's answer (the final labels equal the model's, `human_changed` false).
+- **Served:** every ticket returns `reviewed`, `reviewed_at`, `final_queue`, `final_priority`, `review_note` and `human_changed` (null until reviewed, then true when either final label differs from the model's). `GET /tickets?reviewed=` filters; `needs_review=true&reviewed=false` is the to-do list. `needs_review` keeps its meaning, "the machine asked for a person", so the escalation numbers in decision 29 stay comparable.
+- **Stored:** four new columns, added to an older database in place on open, as decision 29's were. `max_note_chars` (1000) is in `TriageSettings`.
+- **Choices:**
+  - A ticket whose triage failed has no labels to confirm, so the person must give both `queue` and `priority`; the request is refused otherwise and nothing is saved.
+  - Reviewing again replaces the earlier decision (a mistake can be corrected). There is no history of earlier decisions.
+  - There is no "who reviewed it" field: there is no authentication yet, so the name would be self-declared.
+- **Not done:** no summary route for the change rate (count with `GET /tickets?reviewed=true` and `human_changed`); no re-triage; no authentication (loopback only), so anyone who can reach the API can override; the note is stored as typed like the ticket text and can hold personal information.
