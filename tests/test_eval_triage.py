@@ -51,7 +51,15 @@ class FakeClient:
         if body in self.fail:
             return SimpleNamespace(to_dict=lambda: {"stop_reason": "refusal", "content": []})
         queue, priority = self.answers[body]
-        text = json.dumps({"rationale": f"r-{body}", "queue": queue, "priority": priority})
+        text = json.dumps(
+            {
+                "rationale": f"r-{body}",
+                "queue": queue,
+                "priority": priority,
+                "queue_confidence": "high",
+                "priority_confidence": "high",
+            }
+        )
         raw = {
             "stop_reason": "end_turn",
             "content": [{"type": "text", "text": text}],
@@ -185,7 +193,13 @@ def _fake_triage(subject, body, settings):
     queue, priority = ANSWERS[body]
     return TriageOutcome(
         status="ok",
-        result=TriageResult(rationale="r", queue=queue, priority=priority),
+        result=TriageResult(
+            rationale="r",
+            queue=queue,
+            priority=priority,
+            queue_confidence="high",
+            priority_confidence="high",
+        ),
         model=settings.triage.model,
     )
 
@@ -211,6 +225,31 @@ def test_bundle_has_gold_view_and_two_baselines(settings):
     assert bundle["gold_human"]["n"] == 1  # only tt-001 was labelled by a person
     assert set(bundle["baselines"]) == {"majority (dev labels)", "keywords"}
     assert bundle["baselines"]["majority (dev labels)"]["n"] == 4
+
+
+def test_a_ticket_the_labeller_was_unsure_of_is_ambiguous():
+    assert ev.is_ambiguous({"unsure": True, "label_source": "gold"})
+    assert not ev.is_ambiguous({"unsure": False, "label_source": "gold", "silver_queue": None})
+    gold_differs = {
+        "label_source": "gold",
+        "queue": "ei",
+        "priority": "low",
+        "silver_queue": "ei",
+        "silver_priority": "high",
+    }
+    assert ev.is_ambiguous(gold_differs)
+    assert not ev.is_ambiguous({**gold_differs, "silver_priority": "low"})
+
+
+def test_report_says_model_session_labels_are_not_human(settings):
+    items = [
+        dict(i, labelled_by="model-session:claude-x") if i["labelled_by"] else i for i in ITEMS
+    ]
+    rows = rows_for(settings, items=items)
+    bundle = ev.summarize_bundle(rows, items, settings)
+    assert bundle["gold_human"] is None
+    line = ev._gold_and_baselines(bundle, rows)[2]
+    assert "model-session 2" in line and "not reviewed by a person" in line
 
 
 def test_rows_carry_who_labelled(settings):

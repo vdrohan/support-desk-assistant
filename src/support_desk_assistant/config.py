@@ -106,11 +106,55 @@ class TriageSettings(BaseModel):
     max_tokens: int = 400
     system_prompt_path: Path = Path("prompts/triage.md")
     # Bump when TriageResult or the prompt layout changes (part of the response-cache key).
-    schema_version: int = 1
+    schema_version: int = 2  # 2: queue and priority confidence (decisions.md #29)
     max_ticket_chars: int = 4000
     max_subject_chars: int = 200
     db_file: str = "tickets.sqlite"
     page_size_max: int = 100
+    # Override the model profile's request settings. None uses the profile. The second opinion
+    # asks the same model again with thinking on (decisions.md #29).
+    thinking: Literal["disabled", "adaptive"] | None = None
+    effort: Literal["low", "medium", "high", "xhigh", "max"] | None = None
+
+
+class EscalationSettings(BaseModel):
+    """When a triaged ticket goes to a person (docs/decisions.md #29). Each rule adds a reason;
+    a ticket with any reason has ``needs_review``; a ticket whose triage failed always does.
+
+    The values below are the policy chosen on the dev split of ``triage_set_v2`` and frozen
+    before its test run: the best capture within the 40% review budget with no truly urgent
+    ticket left unreached. ``on_urgent`` is off because escalation is about doubt, not stakes:
+    an urgent ticket already tops the queue by its priority (and the eval counts a ticket
+    labelled urgent as reached)."""
+
+    on_other_queue: bool = True  # no program queue fits: a person must route it
+    on_urgent: bool = False  # money or status at immediate risk: stakes, not doubt
+    # Escalate when the model's confidence in a label is below this level
+    # ("low" escalates nothing, "medium" escalates low, "high" escalates low and medium).
+    min_queue_confidence: Literal["low", "medium", "high"] = "high"
+    # Off: the model never says "low" and "medium" is no better than chance on dev.
+    min_priority_confidence: Literal["low", "medium", "high"] = "low"
+    # Escalate when a second pass of the same model, with thinking on, labels the ticket
+    # differently (or fails). Costs a second call per ticket.
+    on_disagreement: bool = True
+    second_opinion_thinking: Literal["disabled", "adaptive"] = "adaptive"
+    second_opinion_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    second_opinion_max_tokens: int = 2000  # thinking tokens count against this
+
+
+class EscalationEvalSettings(BaseModel):
+    """Escalation eval (docs/decisions.md #29). The targets are fixed before the first test run
+    on ``triage_set_v2`` and are not reworded after it; the report states met or not met.
+    Confirmed by the project owner on 2026-10-22, as proposed."""
+
+    # Share of tickets sent to a person: the review budget.
+    max_escalation_rate: float = 0.40
+    # Share of tickets whose queue or priority is wrong that escalation catches.
+    min_error_capture: float = 0.60
+    # Share of truly urgent tickets neither labelled urgent nor flagged for review.
+    max_urgent_unreached: float = 0.05
+    # Also required: the lower bound of the error-capture interval is above the escalation
+    # rate, i.e. escalation beats sending the same share of tickets at random.
 
 
 class TriageEvalSettings(BaseModel):
@@ -124,20 +168,26 @@ class TriageEvalSettings(BaseModel):
     draft_model: str = "claude-haiku-5-5"
     draft_max_tokens: int = 2500
     draft_prompt_path: Path = Path("prompts/triage_draft.md")
-    draft_seed: int = 20261021
+    draft_seed: int = 20261022
     draft_schema_version: int = 2
     tickets_per_request: int = 3
-    # Tickets per coverage style; their sum is the number of tickets drafted.
+    # Ticket ids are ``<id_prefix>-<n>``; each dataset version has its own prefix (v1: ``tc``).
+    id_prefix: str = "t2"
+    # Tickets per coverage style; their sum is the number of tickets drafted (v1 had 150).
     style_counts: dict[str, int] = {
-        "plain": 45,
-        "emotional": 30,
-        "short": 25,
-        "mixed": 15,
-        "confused_program": 12,
-        "french": 12,
-        "injection": 6,
-        "greeting": 5,
+        "plain": 60,
+        "emotional": 40,
+        "short": 34,
+        "mixed": 20,
+        "confused_program": 16,
+        "french": 16,
+        "injection": 8,
+        "greeting": 6,
     }
+    # A drafted ticket this close (word-set Jaccard on subject and body) to a ticket in an
+    # earlier dataset, or to an earlier ticket of this one, is dropped: v2 must not repeat v1.
+    duplicate_jaccard: float = 0.6
+    reference_sets: list[str] = ["triage_set_v1.jsonl"]
     other_share: float = 0.12  # share of tickets about a topic outside the five programs
     high_stakes_share: float = 0.40  # share drawn from the high-stakes situations
     other_topics: list[str] = [
@@ -178,9 +228,9 @@ class TriageEvalSettings(BaseModel):
     label_max_tokens: int = 4000  # thinking headroom, as for the Sonnet answer profile
     # Gold sample size per silver priority (stratified so urgent is not left to chance).
     gold_sample: dict[str, int] = {"urgent": 15, "high": 12, "normal": 12, "low": 11}
-    sample_seed: int = 20261021
+    sample_seed: int = 20261022
     test_share: float = 0.5
-    split_salt: str = "triage-v1"
+    split_salt: str = "triage-v2"
     # Baselines for the scorer: a keyword rule and the majority label (the floor to beat).
     baseline_queue_words: dict[str, list[str]] = {
         "ei": ["ei ", "employment insurance", "record of employment", "laid off", "roe"],
@@ -202,12 +252,12 @@ class TriageEvalSettings(BaseModel):
         "urgent",
         "emergency",
     ]
-    candidates_file: str = "triage_candidates.jsonl"
-    silver_file: str = "triage_silver.jsonl"
-    review_state_file: str = "triage_review_state.json"
-    review_html_file: str = "triage_review.html"
-    gold_file: str = "triage_gold_v1.jsonl"
-    set_file: str = "triage_set_v1.jsonl"
+    candidates_file: str = "triage_candidates_v2.jsonl"
+    silver_file: str = "triage_silver_v2.jsonl"
+    review_state_file: str = "triage_review_state_v2.json"
+    review_html_file: str = "triage_review_v2.html"
+    gold_file: str = "triage_gold_v2.jsonl"
+    set_file: str = "triage_set_v2.jsonl"
     spend_cap_cad: float = 0.25
 
 
@@ -360,6 +410,8 @@ class Settings(BaseSettings):
     answer: AnswerSettings = AnswerSettings()
     api: ApiSettings = ApiSettings()
     triage: TriageSettings = TriageSettings()
+    escalation: EscalationSettings = EscalationSettings()
+    escalation_eval: EscalationEvalSettings = EscalationEvalSettings()
     triage_eval: TriageEvalSettings = TriageEvalSettings()
 
     @property
@@ -389,6 +441,10 @@ class Settings(BaseSettings):
     @property
     def triage_set_path(self) -> Path:
         return self.eval_dir / self.triage_eval.set_file
+
+    @property
+    def triage_reference_paths(self) -> list[Path]:
+        return [self.eval_dir / name for name in self.triage_eval.reference_sets]
 
     @property
     def tickets_db_path(self) -> Path:

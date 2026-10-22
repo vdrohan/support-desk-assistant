@@ -34,6 +34,9 @@ from support_desk_assistant.triage.pipeline import (
 )
 from support_desk_assistant.triage.schema import PRIORITIES, QUEUES
 
+# The owner's rule (CLAUDE.md): only Haiku is called through the paid API.
+API_MODELS_ALLOWED = ("claude-haiku-5-5",)
+
 
 class SilverLabel(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -54,6 +57,7 @@ class GoldLabel(BaseModel):
     queue: str
     priority: str
     labelled_by: str = "human"
+    unsure: bool = False  # the labeller was torn between two labels
 
 
 def labeller_settings(settings: Settings) -> Settings:
@@ -215,6 +219,7 @@ def build_set(
                 "silver_priority": s.priority if s else None,
                 "gold_queue": g.queue if g else None,
                 "gold_priority": g.priority if g else None,
+                "unsure": g.unsure if g else False,
             }
         )
     return items
@@ -266,6 +271,13 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
 
+    if args.yes and cfg.label_model not in API_MODELS_ALLOWED:
+        print(
+            f"refusing to call {cfg.label_model}: paid API calls use Haiku only (CLAUDE.md). "
+            "Label the tickets in the working session instead (sda-eval-triage-review --show "
+            "--all, then --apply FILE --labelled-by model-session:<model>)."
+        )
+        return 2
     est = estimate_cad(candidates, settings)
     print(
         f"{len(candidates)} tickets, labeller {cfg.label_model}. "

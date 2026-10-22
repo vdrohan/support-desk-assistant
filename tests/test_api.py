@@ -123,6 +123,33 @@ def test_generation_failure_status_is_reported():
     client, _ = client_for(outcome(failed, status="max_tokens"))
     body = client.post("/ask", json={"question": "q"}).json()
     assert body["abstained"] is True and body["status"] == "max_tokens"
+    assert body["escalate"] is True and body["escalate_reason"] == "max_tokens"
+
+
+def test_an_answer_is_not_escalated():
+    client, _ = client_for(outcome(ANSWER))
+    body = client.post("/ask", json={"question": "q"}).json()
+    assert body["escalate"] is False and body["escalate_reason"] is None
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "reason"),
+    [
+        ({"result": ABSTAIN}, "model_abstained"),
+        ({"result": ABSTAIN, "status": "gate"}, "no_relevant_sources"),
+        (
+            {
+                "result": ANSWER,
+                "validation": ValidationResult(failed_rules=("citation_not_retrieved",)),
+            },
+            "validation_failed",
+        ),
+    ],
+)
+def test_a_response_without_an_answer_is_escalated_with_its_reason(kwargs, reason):
+    client, _ = client_for(outcome(**kwargs))
+    body = client.post("/ask", json={"question": "q"}).json()
+    assert body["escalate"] is True and body["escalate_reason"] == reason
 
 
 @pytest.mark.parametrize(
