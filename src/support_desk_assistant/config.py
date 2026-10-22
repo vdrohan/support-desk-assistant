@@ -109,6 +109,7 @@ class TriageSettings(BaseModel):
     schema_version: int = 2  # 2: queue and priority confidence (decisions.md #29)
     max_ticket_chars: int = 4000
     max_subject_chars: int = 200
+    max_note_chars: int = 1000  # a reviewer's note on an override (decisions.md #30)
     db_file: str = "tickets.sqlite"
     page_size_max: int = 100
     # Override the model profile's request settings. None uses the profile. The second opinion

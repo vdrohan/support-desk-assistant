@@ -1,4 +1,5 @@
-"""Ticket routes: ``POST /tickets`` triages and stores, ``GET /tickets/{id}``, ``GET /tickets``."""
+"""Ticket routes: ``POST /tickets`` triages and stores, ``GET /tickets/{id}``, ``GET /tickets``,
+``POST /tickets/{id}/override`` records a person's decision."""
 
 from collections.abc import Callable
 from functools import lru_cache
@@ -43,6 +44,22 @@ class TicketOut(BaseModel):
     priority_confidence: str | None
     needs_review: bool  # a person should check this triage before anyone acts on it
     escalation_reasons: list[str]  # why; empty when needs_review is false
+    # A person's decision (POST /tickets/{id}/override). queue and priority above stay the
+    # model's answer, so the two can be compared.
+    reviewed: bool
+    reviewed_at: str | None
+    final_queue: str | None
+    final_priority: str | None
+    review_note: str
+    human_changed: bool | None  # null until reviewed; then whether the person changed either label
+
+
+class OverrideIn(BaseModel):
+    """Leave queue and priority out to confirm the model's answer as it stands."""
+
+    queue: Queue | None = None
+    priority: Priority | None = None
+    note: str = ""
 
 
 def make_triage_fn(settings: Settings) -> TriageFn:
@@ -62,7 +79,13 @@ def make_second_opinion_fn(settings: Settings) -> TriageFn:
 
 
 def _out(ticket: Ticket) -> TicketOut:
-    return TicketOut(**ticket.__dict__)
+    reviewed = ticket.reviewed_at is not None
+    changed = (
+        (ticket.final_queue != ticket.queue or ticket.final_priority != ticket.priority)
+        if reviewed
+        else None
+    )
+    return TicketOut(**ticket.__dict__, reviewed=reviewed, human_changed=changed)
 
 
 def add_ticket_routes(
@@ -140,12 +163,36 @@ def add_ticket_routes(
         queue: Queue | None = None,
         priority: Priority | None = None,
         needs_review: bool | None = None,
+        reviewed: bool | None = None,
         limit: int = Query(50, ge=1),
         offset: int = Query(0, ge=0),
     ) -> list[TicketOut]:
         if limit > cfg.page_size_max:
             raise HTTPException(422, f"limit must be at most {cfg.page_size_max}")
         found = tickets().list(
-            queue=queue, priority=priority, needs_review=needs_review, limit=limit, offset=offset
+            queue=queue,
+            priority=priority,
+            needs_review=needs_review,
+            reviewed=reviewed,
+            limit=limit,
+            offset=offset,
         )
         return [_out(t) for t in found]
+
+    @app.post("/tickets/{ticket_id}/override", response_model=TicketOut)
+    def override_ticket(ticket_id: int, body: OverrideIn) -> TicketOut:
+        ticket = tickets().get(ticket_id)
+        if ticket is None:
+            raise HTTPException(404, "ticket not found")
+        note = body.note.strip()
+        if len(note) > cfg.max_note_chars:
+            raise HTTPException(422, f"note is longer than {cfg.max_note_chars} characters")
+        final_queue = body.queue or ticket.queue
+        final_priority = body.priority or ticket.priority
+        if final_queue is None or final_priority is None:
+            raise HTTPException(422, "this ticket has no triage: give both queue and priority")
+        reviewed = tickets().review(
+            ticket_id, final_queue=final_queue, final_priority=final_priority, note=note
+        )
+        assert reviewed is not None
+        return _out(reviewed)

@@ -9,7 +9,7 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
   - `config.py`: the **only** place for config values (pydantic-settings; override with `SDA_*` env vars)
   - `api/`: FastAPI app (`app.py`: `create_app`, `POST /ask`, `GET /health`; `__main__.py` is `sda-api`)
   - `ingest/`: `crawl.py` → `chunk.py` → `embed.py` → `index.py` (Qdrant sync); `__main__.py` is `sda-ingest`
-  - `triage/`: `schema.py` (queue, priority, confidence, `TriageResult`), `pipeline.py` (`triage_ticket`), `escalate.py` (`escalate`: `needs_review` and reasons), `store.py` (SQLite `TicketStore`, migrates old databases on open); routes in `api/tickets.py`
+  - `triage/`: `schema.py` (queue, priority, confidence, `TriageResult`), `pipeline.py` (`triage_ticket`), `escalate.py` (`escalate`: `needs_review` and reasons), `store.py` (SQLite `TicketStore`, migrates old databases on open; keeps a person's override beside the model's answer); routes in `api/tickets.py` (including `POST /tickets/{id}/override`)
   - `retrieve.py`: `search()` and the `sda-search` CLI
   - `evals/`: eval harness (named `evals`, not `eval`, so it doesn't shadow the builtin); `retrieval.py` is `sda-eval-retrieval`
     - `draft_questions.py`: `sda-eval-draft`, Haiku drafts candidate questions

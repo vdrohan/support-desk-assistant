@@ -157,6 +157,8 @@ uv run sda-eval-escalation --split dev --second-opinion   # dry run; --yes score
 
 A ticket is triaged into one queue (`ei`, `cpp`, `oas`, `sin`, `passport`, `other`) and one priority (`urgent`, `high`, `normal`, `low`), each with a `low`/`medium`/`high` confidence; the rules are in [prompts/triage.md](prompts/triage.md). A ticket goes to a person (`needs_review`, with `escalation_reasons`) when triage failed, the queue is `other`, the model's queue confidence is below high, or a second Haiku pass with thinking on labels it differently; urgent tickets top the queue by priority instead ([decisions #29](docs/decisions.md#29-escalation-rules-plus-the-classifiers-own-confidence-scored-on-a-fresh-set-with-the-targets-fixed-first)). Tickets are free text and can contain personal information: the SQLite store (`data/tickets.sqlite`, gitignored) keeps them as typed and they are sent to the Anthropic API, so don't put real SINs or passport numbers in them.
 
+A person can correct or confirm a triage with `POST /tickets/{id}/override` (`queue`, `priority`, `note`, all optional: send none to confirm). The model's own `queue` and `priority` stay as they were; the decision is stored beside them as `final_queue`, `final_priority`, `review_note` and `reviewed_at`, and `human_changed` says whether the person changed either label. `GET /tickets?needs_review=true&reviewed=false` is the to-do list of flagged tickets nobody has looked at ([decisions #30](docs/decisions.md#30-override-a-person-records-their-decision-beside-the-models-answer)).
+
 ### Run the API
 
 ```bash

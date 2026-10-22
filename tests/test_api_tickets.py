@@ -256,3 +256,80 @@ def test_upstream_failures_store_nothing(tmp_path, error, status):
     r = client.post("/tickets", json={"body": "x"})
     assert r.status_code == status and "x.test" not in r.text
     assert client.get("/tickets").json() == []
+
+
+def test_an_override_records_the_decision_and_keeps_the_models_answer(tmp_path):
+    client, _ = make(tmp_path, ok("ei", "low"))
+    t = client.post("/tickets", json={"body": "x"}).json()
+    assert t["reviewed"] is False and t["reviewed_at"] is None and t["human_changed"] is None
+    r = client.post(
+        f"/tickets/{t['id']}/override",
+        json={"queue": "cpp", "priority": "high", "note": " wrong program "},
+    )
+    assert r.status_code == 200
+    o = r.json()
+    assert (o["queue"], o["priority"]) == ("ei", "low")  # what the model said
+    assert (o["final_queue"], o["final_priority"]) == ("cpp", "high")  # what the person decided
+    assert o["review_note"] == "wrong program"
+    assert o["reviewed"] is True and o["reviewed_at"] and o["human_changed"] is True
+    assert client.get(f"/tickets/{t['id']}").json() == o
+
+
+def test_confirming_without_changes_counts_as_reviewed_and_not_changed(tmp_path):
+    client, _ = make(tmp_path, ok("ei", "low"))
+    t = client.post("/tickets", json={"body": "x"}).json()
+    o = client.post(f"/tickets/{t['id']}/override", json={}).json()
+    assert (o["final_queue"], o["final_priority"]) == ("ei", "low")
+    assert o["reviewed"] is True and o["human_changed"] is False
+
+
+def test_changing_only_one_label_keeps_the_other(tmp_path):
+    client, _ = make(tmp_path, ok("ei", "low"))
+    t = client.post("/tickets", json={"body": "x"}).json()
+    o = client.post(f"/tickets/{t['id']}/override", json={"priority": "urgent"}).json()
+    assert (o["final_queue"], o["final_priority"]) == ("ei", "urgent")
+    assert o["human_changed"] is True
+
+
+def test_reviewing_again_replaces_the_earlier_decision(tmp_path):
+    client, _ = make(tmp_path, ok("ei", "low"))
+    t = client.post("/tickets", json={"body": "x"}).json()
+    client.post(f"/tickets/{t['id']}/override", json={"queue": "cpp", "note": "first"})
+    o = client.post(f"/tickets/{t['id']}/override", json={"note": "second"}).json()
+    assert (o["final_queue"], o["review_note"], o["human_changed"]) == ("ei", "second", False)
+
+
+def test_reviewed_filter_gives_a_to_do_list_with_needs_review(tmp_path):
+    client, stub = make(tmp_path)
+    for queue in ("other", "other", "ei"):
+        stub.result = ok(queue, "low")
+        client.post("/tickets", json={"body": queue})
+    client.post("/tickets/1/override", json={})
+    todo = client.get("/tickets?needs_review=true&reviewed=false").json()
+    assert [t["id"] for t in todo] == [2]
+    assert [t["id"] for t in client.get("/tickets?reviewed=true").json()] == [1]
+    assert [t["id"] for t in client.get("/tickets?reviewed=false").json()] == [3, 2]
+    assert client.get("/tickets?reviewed=maybe").status_code == 422
+
+
+def test_a_failed_ticket_needs_both_labels_from_the_person(tmp_path):
+    failed = TriageOutcome(status=STATUS_REFUSAL, result=None, model="m")
+    client, _ = make(tmp_path, failed)
+    t = client.post("/tickets", json={"body": "x"}).json()
+    path = f"/tickets/{t['id']}/override"
+    assert client.post(path, json={}).status_code == 422
+    assert client.post(path, json={"queue": "sin"}).status_code == 422
+    assert client.get(f"/tickets/{t['id']}").json()["reviewed"] is False  # nothing was saved
+    o = client.post(path, json={"queue": "sin", "priority": "normal"}).json()
+    assert (o["queue"], o["final_queue"], o["human_changed"]) == (None, "sin", True)
+
+
+def test_override_rejects_unknown_ticket_bad_labels_and_long_notes(tmp_path):
+    client, _ = make(tmp_path, triage=TriageSettings(max_note_chars=5))
+    t = client.post("/tickets", json={"body": "x"}).json()
+    path = f"/tickets/{t['id']}/override"
+    assert client.post("/tickets/99/override", json={}).status_code == 404
+    assert client.post(path, json={"queue": "tax"}).status_code == 422
+    assert client.post(path, json={"priority": "now"}).status_code == 422
+    assert client.post(path, json={"note": "123456"}).status_code == 422
+    assert client.post(path, json={"note": "12345"}).status_code == 200

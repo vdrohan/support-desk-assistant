@@ -28,7 +28,11 @@ CREATE TABLE IF NOT EXISTS tickets (
     queue_confidence TEXT,
     priority_confidence TEXT,
     needs_review INTEGER NOT NULL DEFAULT 0,
-    escalation_reasons TEXT NOT NULL DEFAULT ''
+    escalation_reasons TEXT NOT NULL DEFAULT '',
+    reviewed_at TEXT,
+    final_queue TEXT,
+    final_priority TEXT,
+    review_note TEXT NOT NULL DEFAULT ''
 );
 CREATE INDEX IF NOT EXISTS tickets_queue_priority ON tickets (queue, priority);
 """
@@ -41,10 +45,19 @@ _ESCALATION_COLUMNS = {
     "escalation_reasons": "TEXT NOT NULL DEFAULT ''",
 }
 
+# Columns added by decision 30 (a person's override); the machine's queue and priority stay as
+# they were, so the two can be compared.
+_REVIEW_COLUMNS = {
+    "reviewed_at": "TEXT",
+    "final_queue": "TEXT",
+    "final_priority": "TEXT",
+    "review_note": "TEXT NOT NULL DEFAULT ''",
+}
+
 
 def _migrate(conn: sqlite3.Connection) -> None:
     have = {r["name"] for r in conn.execute("PRAGMA table_info(tickets)")}
-    for name, ddl in _ESCALATION_COLUMNS.items():
+    for name, ddl in {**_ESCALATION_COLUMNS, **_REVIEW_COLUMNS}.items():
         if name not in have:
             conn.execute(f"ALTER TABLE tickets ADD COLUMN {name} {ddl}")  # noqa: S608
     if "needs_review" not in have:
@@ -73,6 +86,10 @@ class Ticket:
     priority_confidence: str | None = None
     needs_review: bool = False
     escalation_reasons: tuple[str, ...] = ()
+    reviewed_at: str | None = None
+    final_queue: str | None = None
+    final_priority: str | None = None
+    review_note: str = ""
 
 
 def _ticket(row: sqlite3.Row) -> Ticket:
@@ -145,12 +162,28 @@ class TicketStore:
             row = conn.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
         return _ticket(row) if row else None
 
+    def review(
+        self, ticket_id: int, *, final_queue: str, final_priority: str, note: str
+    ) -> Ticket | None:
+        """Record a person's decision. Reviewing again replaces the earlier decision."""
+        reviewed_at = datetime.now(UTC).isoformat(timespec="seconds")
+        with closing(self._connect()) as conn, conn:
+            cur = conn.execute(
+                "UPDATE tickets SET reviewed_at = ?, final_queue = ?, final_priority = ?,"
+                " review_note = ? WHERE id = ?",
+                (reviewed_at, final_queue, final_priority, note, ticket_id),
+            )
+            if cur.rowcount == 0:
+                return None
+        return self.get(ticket_id)
+
     def list(
         self,
         *,
         queue: str | None = None,
         priority: str | None = None,
         needs_review: bool | None = None,
+        reviewed: bool | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[Ticket]:
@@ -164,6 +197,8 @@ class TicketStore:
         if needs_review is not None:
             clauses.append("needs_review = ?")
             args.append(int(needs_review))
+        if reviewed is not None:
+            clauses.append("reviewed_at IS NOT NULL" if reviewed else "reviewed_at IS NULL")
         where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
         with closing(self._connect()) as conn:
             rows = conn.execute(
