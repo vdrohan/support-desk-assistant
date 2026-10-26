@@ -238,6 +238,14 @@ data/eval/review_state.json
 data/eval/review.html
 data/eval/judge_review.md
 data/eval/runs/
+data/eval/triage_candidates.jsonl
+data/eval/triage_silver.jsonl
+data/eval/triage_review_state.json
+data/eval/triage_review.html
+data/eval/triage_candidates_v2.jsonl
+data/eval/triage_silver_v2.jsonl
+data/eval/triage_review_state_v2.json
+data/eval/triage_review_v2.html
 
 # local Claude Code worktrees
 .claude/worktrees/
@@ -245,3 +253,8 @@ data/eval/runs/
 # request log (answer pipeline)
 logs/
 .vscode/
+
+# ticket store (docs/decisions.md #28): holds whatever users typed
+data/tickets.sqlite*
+data/eval/triage_claude_pass_v1.jsonl
+data/eval/triage_claude_pass_state_v1.json

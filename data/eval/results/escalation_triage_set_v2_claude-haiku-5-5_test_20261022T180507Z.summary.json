@@ -1,0 +1,5512 @@
+{
+ "meta": {
+  "run_id": "20261022T180507Z",
+  "split": "test",
+  "created_at": "2026-10-22T18:05:07+00:00",
+  "git": {
+   "sha": "f06e369",
+   "dirty": false,
+   "diff_sha256": null,
+   "untracked": []
+  },
+  "dataset": {
+   "name": "triage_set_v2.jsonl",
+   "sha256": "fedb6587648d6ea3f44faf21898dc8c8d19e375d497410b7c208a4e7d7819c7d"
+  },
+  "model": "claude-haiku-5-5",
+  "prompt_sha256": "d16c086c4b411287ab812f56303f2aa6d7fa9b22610ae1b9ac32e870acb756f3",
+  "schema_version": 2,
+  "max_tokens": 400,
+  "cost_cad": 0.08821,
+  "cost_cad_list": 0.08821,
+  "cache_hits": 0,
+  "second_opinion": {
+   "model": "claude-haiku-5-5",
+   "thinking": "adaptive",
+   "effort": "medium",
+   "max_tokens": 2000,
+   "cost_cad": 0.051106
+  },
+  "escalation": {
+   "on_other_queue": true,
+   "on_urgent": false,
+   "min_queue_confidence": "high",
+   "min_priority_confidence": "low",
+   "on_disagreement": true,
+   "second_opinion_thinking": "adaptive",
+   "second_opinion_effort": "medium",
+   "second_opinion_max_tokens": 2000
+  },
+  "targets": {
+   "max_escalation_rate": 0.4,
+   "min_error_capture": 0.6,
+   "max_urgent_unreached": 0.05
+  }
+ },
+ "metrics": {
+  "classifier": {
+   "n": 103,
+   "generation_failures": 0,
+   "queue_accuracy": {
+    "k": 91,
+    "n": 103,
+    "rate": 0.883,
+    "ci95": [
+     0.807,
+     0.932
+    ]
+   },
+   "priority_accuracy": {
+    "k": 83,
+    "n": 103,
+    "rate": 0.806,
+    "ci95": [
+     0.719,
+     0.871
+    ]
+   },
+   "both_correct": {
+    "k": 73,
+    "n": 103,
+    "rate": 0.709,
+    "ci95": [
+     0.615,
+     0.788
+    ]
+   },
+   "priority_within_one": {
+    "k": 100,
+    "n": 103,
+    "rate": 0.971,
+    "ci95": [
+     0.918,
+     0.99
+    ]
+   },
+   "urgent_recall": {
+    "k": 28,
+    "n": 29,
+    "rate": 0.966,
+    "ci95": [
+     0.828,
+     0.994
+    ]
+   },
+   "urgent_precision": {
+    "k": 28,
+    "n": 32,
+    "rate": 0.875,
+    "ci95": [
+     0.719,
+     0.95
+    ]
+   },
+   "under_triage": {
+    "k": 9,
+    "n": 103,
+    "rate": 0.087,
+    "ci95": [
+     0.047,
+     0.158
+    ]
+   },
+   "over_triage": {
+    "k": 11,
+    "n": 103,
+    "rate": 0.107,
+    "ci95": [
+     0.061,
+     0.181
+    ]
+   },
+   "per_queue": {
+    "ei": {
+     "recall": {
+      "k": 13,
+      "n": 13,
+      "rate": 1.0,
+      "ci95": [
+       0.772,
+       1.0
+      ]
+     },
+     "precision": {
+      "k": 13,
+      "n": 14,
+      "rate": 0.929,
+      "ci95": [
+       0.685,
+       0.987
+      ]
+     }
+    },
+    "cpp": {
+     "recall": {
+      "k": 11,
+      "n": 11,
+      "rate": 1.0,
+      "ci95": [
+       0.741,
+       1.0
+      ]
+     },
+     "precision": {
+      "k": 11,
+      "n": 15,
+      "rate": 0.733,
+      "ci95": [
+       0.48,
+       0.891
+      ]
+     }
+    },
+    "oas": {
+     "recall": {
+      "k": 11,
+      "n": 11,
+      "rate": 1.0,
+      "ci95": [
+       0.741,
+       1.0
+      ]
+     },
+     "precision": {
+      "k": 11,
+      "n": 13,
+      "rate": 0.846,
+      "ci95": [
+       0.578,
+       0.957
+      ]
+     }
+    },
+    "sin": {
+     "recall": {
+      "k": 13,
+      "n": 15,
+      "rate": 0.867,
+      "ci95": [
+       0.621,
+       0.963
+      ]
+     },
+     "precision": {
+      "k": 13,
+      "n": 16,
+      "rate": 0.812,
+      "ci95": [
+       0.57,
+       0.934
+      ]
+     }
+    },
+    "passport": {
+     "recall": {
+      "k": 24,
+      "n": 24,
+      "rate": 1.0,
+      "ci95": [
+       0.862,
+       1.0
+      ]
+     },
+     "precision": {
+      "k": 24,
+      "n": 25,
+      "rate": 0.96,
+      "ci95": [
+       0.805,
+       0.993
+      ]
+     }
+    },
+    "other": {
+     "recall": {
+      "k": 19,
+      "n": 29,
+      "rate": 0.655,
+      "ci95": [
+       0.473,
+       0.801
+      ]
+     },
+     "precision": {
+      "k": 19,
+      "n": 20,
+      "rate": 0.95,
+      "ci95": [
+       0.764,
+       0.991
+      ]
+     }
+    }
+   },
+   "by_style": {
+    "confused_program": {
+     "n": 11,
+     "queue": {
+      "k": 5,
+      "n": 11,
+      "rate": 0.455,
+      "ci95": [
+       0.213,
+       0.72
+      ]
+     },
+     "priority": {
+      "k": 11,
+      "n": 11,
+      "rate": 1.0,
+      "ci95": [
+       0.741,
+       1.0
+      ]
+     }
+    },
+    "emotional": {
+     "n": 23,
+     "queue": {
+      "k": 22,
+      "n": 23,
+      "rate": 0.957,
+      "ci95": [
+       0.79,
+       0.992
+      ]
+     },
+     "priority": {
+      "k": 18,
+      "n": 23,
+      "rate": 0.783,
+      "ci95": [
+       0.581,
+       0.903
+      ]
+     }
+    },
+    "french": {
+     "n": 6,
+     "queue": {
+      "k": 6,
+      "n": 6,
+      "rate": 1.0,
+      "ci95": [
+       0.61,
+       1.0
+      ]
+     },
+     "priority": {
+      "k": 5,
+      "n": 6,
+      "rate": 0.833,
+      "ci95": [
+       0.436,
+       0.97
+      ]
+     }
+    },
+    "greeting": {
+     "n": 2,
+     "queue": {
+      "k": 2,
+      "n": 2,
+      "rate": 1.0,
+      "ci95": [
+       0.342,
+       1.0
+      ]
+     },
+     "priority": {
+      "k": 2,
+      "n": 2,
+      "rate": 1.0,
+      "ci95": [
+       0.342,
+       1.0
+      ]
+     }
+    },
+    "injection": {
+     "n": 3,
+     "queue": {
+      "k": 3,
+      "n": 3,
+      "rate": 1.0,
+      "ci95": [
+       0.438,
+       1.0
+      ]
+     },
+     "priority": {
+      "k": 3,
+      "n": 3,
+      "rate": 1.0,
+      "ci95": [
+       0.438,
+       1.0
+      ]
+     }
+    },
+    "mixed": {
+     "n": 12,
+     "queue": {
+      "k": 11,
+      "n": 12,
+      "rate": 0.917,
+      "ci95": [
+       0.646,
+       0.985
+      ]
+     },
+     "priority": {
+      "k": 8,
+      "n": 12,
+      "rate": 0.667,
+      "ci95": [
+       0.391,
+       0.862
+      ]
+     }
+    },
+    "plain": {
+     "n": 30,
+     "queue": {
+      "k": 28,
+      "n": 30,
+      "rate": 0.933,
+      "ci95": [
+       0.787,
+       0.982
+      ]
+     },
+     "priority": {
+      "k": 21,
+      "n": 30,
+      "rate": 0.7,
+      "ci95": [
+       0.521,
+       0.833
+      ]
+     }
+    },
+    "short": {
+     "n": 16,
+     "queue": {
+      "k": 14,
+      "n": 16,
+      "rate": 0.875,
+      "ci95": [
+       0.64,
+       0.965
+      ]
+     },
+     "priority": {
+      "k": 15,
+      "n": 16,
+      "rate": 0.938,
+      "ci95": [
+       0.717,
+       0.989
+      ]
+     }
+    }
+   },
+   "queue_confusion": {
+    "passport": {
+     "passport": 24
+    },
+    "ei": {
+     "ei": 13
+    },
+    "other": {
+     "other": 19,
+     "oas": 2,
+     "ei": 1,
+     "cpp": 4,
+     "sin": 3
+    },
+    "sin": {
+     "sin": 13,
+     "other": 1,
+     "passport": 1
+    },
+    "cpp": {
+     "cpp": 11
+    },
+    "oas": {
+     "oas": 11
+    }
+   },
+   "priority_confusion": {
+    "urgent": {
+     "urgent": 28,
+     "high": 1
+    },
+    "high": {
+     "high": 35,
+     "low": 1,
+     "normal": 4,
+     "urgent": 2
+    },
+    "normal": {
+     "normal": 6,
+     "high": 2,
+     "low": 3,
+     "urgent": 1
+    },
+    "low": {
+     "low": 14,
+     "normal": 5,
+     "urgent": 1
+    }
+   }
+  },
+  "second_opinion": true,
+  "policies": {
+   "rules only (other queue, urgent)": {
+    "n": 103,
+    "escalated": {
+     "k": 46,
+     "n": 103,
+     "rate": 0.447,
+     "ci95": [
+      0.354,
+      0.543
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 16,
+     "n": 30,
+     "rate": 0.533,
+     "ci95": [
+      0.361,
+      0.698
+     ]
+    },
+    "escalation_precision": {
+     "k": 16,
+     "n": 46,
+     "rate": 0.348,
+     "ci95": [
+      0.227,
+      0.492
+     ]
+    },
+    "residual_error": {
+     "k": 14,
+     "n": 57,
+     "rate": 0.246,
+     "ci95": [
+      0.152,
+      0.371
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 10,
+     "n": 12,
+     "rate": 0.833,
+     "ci95": [
+      0.552,
+      0.953
+     ]
+    },
+    "error_capture_clear": {
+     "k": 6,
+     "n": 18,
+     "rate": 0.333,
+     "ci95": [
+      0.163,
+      0.563
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 20,
+     "n": 30,
+     "rate": 0.667,
+     "ci95": [
+      0.488,
+      0.808
+     ]
+    },
+    "random_capture": 0.447,
+    "reasons": {
+     "urgent": 32,
+     "no_program_queue": 20
+    }
+   },
+   "confidence only (configured floors)": {
+    "n": 103,
+    "escalated": {
+     "k": 24,
+     "n": 103,
+     "rate": 0.233,
+     "ci95": [
+      0.162,
+      0.323
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 13,
+     "n": 30,
+     "rate": 0.433,
+     "ci95": [
+      0.274,
+      0.608
+     ]
+    },
+    "escalation_precision": {
+     "k": 13,
+     "n": 24,
+     "rate": 0.542,
+     "ci95": [
+      0.351,
+      0.721
+     ]
+    },
+    "residual_error": {
+     "k": 17,
+     "n": 79,
+     "rate": 0.215,
+     "ci95": [
+      0.139,
+      0.318
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 5,
+     "n": 18,
+     "rate": 0.278,
+     "ci95": [
+      0.125,
+      0.509
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 14,
+     "n": 30,
+     "rate": 0.467,
+     "ci95": [
+      0.302,
+      0.639
+     ]
+    },
+    "random_capture": 0.233,
+    "reasons": {
+     "low_queue_confidence": 24
+    }
+   },
+   "second opinion only": {
+    "n": 103,
+    "escalated": {
+     "k": 24,
+     "n": 103,
+     "rate": 0.233,
+     "ci95": [
+      0.162,
+      0.323
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "escalation_precision": {
+     "k": 17,
+     "n": 24,
+     "rate": 0.708,
+     "ci95": [
+      0.508,
+      0.851
+     ]
+    },
+    "residual_error": {
+     "k": 13,
+     "n": 79,
+     "rate": 0.165,
+     "ci95": [
+      0.099,
+      0.261
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 10,
+     "n": 18,
+     "rate": 0.556,
+     "ci95": [
+      0.337,
+      0.754
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 9,
+     "n": 30,
+     "rate": 0.3,
+     "ci95": [
+      0.167,
+      0.479
+     ]
+    },
+    "random_capture": 0.233,
+    "reasons": {
+     "second_opinion_differs": 24
+    }
+   },
+   "configured policy": {
+    "n": 103,
+    "escalated": {
+     "k": 41,
+     "n": 103,
+     "rate": 0.398,
+     "ci95": [
+      0.309,
+      0.495
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.627,
+      0.905
+     ]
+    },
+    "escalation_precision": {
+     "k": 24,
+     "n": 41,
+     "rate": 0.585,
+     "ci95": [
+      0.434,
+      0.722
+     ]
+    },
+    "residual_error": {
+     "k": 6,
+     "n": 62,
+     "rate": 0.097,
+     "ci95": [
+      0.045,
+      0.195
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 10,
+     "n": 12,
+     "rate": 0.833,
+     "ci95": [
+      0.552,
+      0.953
+     ]
+    },
+    "error_capture_clear": {
+     "k": 14,
+     "n": 18,
+     "rate": 0.778,
+     "ci95": [
+      0.548,
+      0.91
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 16,
+     "n": 30,
+     "rate": 0.533,
+     "ci95": [
+      0.361,
+      0.698
+     ]
+    },
+    "random_capture": 0.398,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   }
+  },
+  "configured": {
+   "n": 103,
+   "escalated": {
+    "k": 41,
+    "n": 103,
+    "rate": 0.398,
+    "ci95": [
+     0.309,
+     0.495
+    ]
+   },
+   "error_rate": {
+    "k": 30,
+    "n": 103,
+    "rate": 0.291,
+    "ci95": [
+     0.212,
+     0.385
+    ]
+   },
+   "error_capture": {
+    "k": 24,
+    "n": 30,
+    "rate": 0.8,
+    "ci95": [
+     0.627,
+     0.905
+    ]
+   },
+   "escalation_precision": {
+    "k": 24,
+    "n": 41,
+    "rate": 0.585,
+    "ci95": [
+     0.434,
+     0.722
+    ]
+   },
+   "residual_error": {
+    "k": 6,
+    "n": 62,
+    "rate": 0.097,
+    "ci95": [
+     0.045,
+     0.195
+    ]
+   },
+   "urgent_unreached": {
+    "k": 1,
+    "n": 29,
+    "rate": 0.034,
+    "ci95": [
+     0.006,
+     0.172
+    ]
+   },
+   "under_triage_capture": {
+    "k": 7,
+    "n": 9,
+    "rate": 0.778,
+    "ci95": [
+     0.453,
+     0.937
+    ]
+   },
+   "error_rate_unsure": {
+    "k": 12,
+    "n": 30,
+    "rate": 0.4,
+    "ci95": [
+     0.246,
+     0.577
+    ]
+   },
+   "error_rate_clear": {
+    "k": 18,
+    "n": 73,
+    "rate": 0.247,
+    "ci95": [
+     0.162,
+     0.356
+    ]
+   },
+   "error_capture_unsure": {
+    "k": 10,
+    "n": 12,
+    "rate": 0.833,
+    "ci95": [
+     0.552,
+     0.953
+    ]
+   },
+   "error_capture_clear": {
+    "k": 14,
+    "n": 18,
+    "rate": 0.778,
+    "ci95": [
+     0.548,
+     0.91
+    ]
+   },
+   "ambiguous_capture": {
+    "k": 16,
+    "n": 30,
+    "rate": 0.533,
+    "ci95": [
+     0.361,
+     0.698
+    ]
+   },
+   "random_capture": 0.398,
+   "reasons": {
+    "no_program_queue": 20,
+    "low_queue_confidence": 24,
+    "second_opinion_differs": 24
+   }
+  },
+  "targets": [
+   {
+    "target": "escalated at most 0.40",
+    "value": 0.398,
+    "met": true
+   },
+   {
+    "target": "error capture at least 0.60",
+    "value": 0.8,
+    "met": true
+   },
+   {
+    "target": "error capture interval above the escalation rate (beats random)",
+    "value": 0.627,
+    "met": true
+   },
+   {
+    "target": "urgent unreached at most 0.05",
+    "value": 0.034,
+    "met": true
+   }
+  ],
+  "gold": {
+   "n": 103,
+   "escalated": {
+    "k": 41,
+    "n": 103,
+    "rate": 0.398,
+    "ci95": [
+     0.309,
+     0.495
+    ]
+   },
+   "error_rate": {
+    "k": 30,
+    "n": 103,
+    "rate": 0.291,
+    "ci95": [
+     0.212,
+     0.385
+    ]
+   },
+   "error_capture": {
+    "k": 24,
+    "n": 30,
+    "rate": 0.8,
+    "ci95": [
+     0.627,
+     0.905
+    ]
+   },
+   "escalation_precision": {
+    "k": 24,
+    "n": 41,
+    "rate": 0.585,
+    "ci95": [
+     0.434,
+     0.722
+    ]
+   },
+   "residual_error": {
+    "k": 6,
+    "n": 62,
+    "rate": 0.097,
+    "ci95": [
+     0.045,
+     0.195
+    ]
+   },
+   "urgent_unreached": {
+    "k": 1,
+    "n": 29,
+    "rate": 0.034,
+    "ci95": [
+     0.006,
+     0.172
+    ]
+   },
+   "under_triage_capture": {
+    "k": 7,
+    "n": 9,
+    "rate": 0.778,
+    "ci95": [
+     0.453,
+     0.937
+    ]
+   },
+   "error_rate_unsure": {
+    "k": 12,
+    "n": 30,
+    "rate": 0.4,
+    "ci95": [
+     0.246,
+     0.577
+    ]
+   },
+   "error_rate_clear": {
+    "k": 18,
+    "n": 73,
+    "rate": 0.247,
+    "ci95": [
+     0.162,
+     0.356
+    ]
+   },
+   "error_capture_unsure": {
+    "k": 10,
+    "n": 12,
+    "rate": 0.833,
+    "ci95": [
+     0.552,
+     0.953
+    ]
+   },
+   "error_capture_clear": {
+    "k": 14,
+    "n": 18,
+    "rate": 0.778,
+    "ci95": [
+     0.548,
+     0.91
+    ]
+   },
+   "ambiguous_capture": {
+    "k": 16,
+    "n": 30,
+    "rate": 0.533,
+    "ci95": [
+     0.361,
+     0.698
+    ]
+   },
+   "random_capture": 0.398,
+   "reasons": {
+    "no_program_queue": 20,
+    "low_queue_confidence": 24,
+    "second_opinion_differs": 24
+   }
+  },
+  "sweep": [
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "low",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 0,
+     "n": 103,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.036
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 0,
+     "n": 30,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.114
+     ]
+    },
+    "escalation_precision": {
+     "k": 0,
+     "n": 0,
+     "rate": null,
+     "ci95": null
+    },
+    "residual_error": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 0,
+     "n": 12,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.243
+     ]
+    },
+    "error_capture_clear": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.176
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 0,
+     "n": 30,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.114
+     ]
+    },
+    "random_capture": 0.0,
+    "reasons": {}
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "low",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 0,
+     "n": 103,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.036
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 0,
+     "n": 30,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.114
+     ]
+    },
+    "escalation_precision": {
+     "k": 0,
+     "n": 0,
+     "rate": null,
+     "ci95": null
+    },
+    "residual_error": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 0,
+     "n": 12,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.243
+     ]
+    },
+    "error_capture_clear": {
+     "k": 0,
+     "n": 18,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.176
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 0,
+     "n": 30,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.114
+     ]
+    },
+    "random_capture": 0.0,
+    "reasons": {}
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "low",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 54,
+     "n": 103,
+     "rate": 0.524,
+     "ci95": [
+      0.429,
+      0.618
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "escalation_precision": {
+     "k": 17,
+     "n": 54,
+     "rate": 0.315,
+     "ci95": [
+      0.207,
+      0.447
+     ]
+    },
+    "residual_error": {
+     "k": 13,
+     "n": 49,
+     "rate": 0.265,
+     "ci95": [
+      0.162,
+      0.403
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 6,
+     "n": 9,
+     "rate": 0.667,
+     "ci95": [
+      0.354,
+      0.879
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 10,
+     "n": 18,
+     "rate": 0.556,
+     "ci95": [
+      0.337,
+      0.754
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 15,
+     "n": 30,
+     "rate": 0.5,
+     "ci95": [
+      0.332,
+      0.668
+     ]
+    },
+    "random_capture": 0.524,
+    "reasons": {
+     "low_priority_confidence": 54
+    }
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "medium",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 12,
+     "n": 103,
+     "rate": 0.117,
+     "ci95": [
+      0.068,
+      0.193
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 4,
+     "n": 30,
+     "rate": 0.133,
+     "ci95": [
+      0.053,
+      0.297
+     ]
+    },
+    "escalation_precision": {
+     "k": 4,
+     "n": 12,
+     "rate": 0.333,
+     "ci95": [
+      0.138,
+      0.609
+     ]
+    },
+    "residual_error": {
+     "k": 26,
+     "n": 91,
+     "rate": 0.286,
+     "ci95": [
+      0.203,
+      0.386
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 2,
+     "n": 12,
+     "rate": 0.167,
+     "ci95": [
+      0.047,
+      0.448
+     ]
+    },
+    "error_capture_clear": {
+     "k": 2,
+     "n": 18,
+     "rate": 0.111,
+     "ci95": [
+      0.031,
+      0.328
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 5,
+     "n": 30,
+     "rate": 0.167,
+     "ci95": [
+      0.073,
+      0.336
+     ]
+    },
+    "random_capture": 0.117,
+    "reasons": {
+     "low_queue_confidence": 12
+    }
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "medium",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 12,
+     "n": 103,
+     "rate": 0.117,
+     "ci95": [
+      0.068,
+      0.193
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 4,
+     "n": 30,
+     "rate": 0.133,
+     "ci95": [
+      0.053,
+      0.297
+     ]
+    },
+    "escalation_precision": {
+     "k": 4,
+     "n": 12,
+     "rate": 0.333,
+     "ci95": [
+      0.138,
+      0.609
+     ]
+    },
+    "residual_error": {
+     "k": 26,
+     "n": 91,
+     "rate": 0.286,
+     "ci95": [
+      0.203,
+      0.386
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 2,
+     "n": 12,
+     "rate": 0.167,
+     "ci95": [
+      0.047,
+      0.448
+     ]
+    },
+    "error_capture_clear": {
+     "k": 2,
+     "n": 18,
+     "rate": 0.111,
+     "ci95": [
+      0.031,
+      0.328
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 5,
+     "n": 30,
+     "rate": 0.167,
+     "ci95": [
+      0.073,
+      0.336
+     ]
+    },
+    "random_capture": 0.117,
+    "reasons": {
+     "low_queue_confidence": 12
+    }
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "medium",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 58,
+     "n": 103,
+     "rate": 0.563,
+     "ci95": [
+      0.467,
+      0.655
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 18,
+     "n": 30,
+     "rate": 0.6,
+     "ci95": [
+      0.423,
+      0.754
+     ]
+    },
+    "escalation_precision": {
+     "k": 18,
+     "n": 58,
+     "rate": 0.31,
+     "ci95": [
+      0.206,
+      0.438
+     ]
+    },
+    "residual_error": {
+     "k": 12,
+     "n": 45,
+     "rate": 0.267,
+     "ci95": [
+      0.16,
+      0.41
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 6,
+     "n": 9,
+     "rate": 0.667,
+     "ci95": [
+      0.354,
+      0.879
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 11,
+     "n": 18,
+     "rate": 0.611,
+     "ci95": [
+      0.386,
+      0.797
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "random_capture": 0.563,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "low_queue_confidence": 12
+    }
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "high",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 24,
+     "n": 103,
+     "rate": 0.233,
+     "ci95": [
+      0.162,
+      0.323
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 13,
+     "n": 30,
+     "rate": 0.433,
+     "ci95": [
+      0.274,
+      0.608
+     ]
+    },
+    "escalation_precision": {
+     "k": 13,
+     "n": 24,
+     "rate": 0.542,
+     "ci95": [
+      0.351,
+      0.721
+     ]
+    },
+    "residual_error": {
+     "k": 17,
+     "n": 79,
+     "rate": 0.215,
+     "ci95": [
+      0.139,
+      0.318
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 5,
+     "n": 18,
+     "rate": 0.278,
+     "ci95": [
+      0.125,
+      0.509
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 14,
+     "n": 30,
+     "rate": 0.467,
+     "ci95": [
+      0.302,
+      0.639
+     ]
+    },
+    "random_capture": 0.233,
+    "reasons": {
+     "low_queue_confidence": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "high",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 24,
+     "n": 103,
+     "rate": 0.233,
+     "ci95": [
+      0.162,
+      0.323
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 13,
+     "n": 30,
+     "rate": 0.433,
+     "ci95": [
+      0.274,
+      0.608
+     ]
+    },
+    "escalation_precision": {
+     "k": 13,
+     "n": 24,
+     "rate": 0.542,
+     "ci95": [
+      0.351,
+      0.721
+     ]
+    },
+    "residual_error": {
+     "k": 17,
+     "n": 79,
+     "rate": 0.215,
+     "ci95": [
+      0.139,
+      0.318
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 0,
+     "n": 9,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.299
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 5,
+     "n": 18,
+     "rate": 0.278,
+     "ci95": [
+      0.125,
+      0.509
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 14,
+     "n": 30,
+     "rate": 0.467,
+     "ci95": [
+      0.302,
+      0.639
+     ]
+    },
+    "random_capture": 0.233,
+    "reasons": {
+     "low_queue_confidence": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": false,
+    "queue_floor": "high",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 66,
+     "n": 103,
+     "rate": 0.641,
+     "ci95": [
+      0.545,
+      0.727
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.627,
+      0.905
+     ]
+    },
+    "escalation_precision": {
+     "k": 24,
+     "n": 66,
+     "rate": 0.364,
+     "ci95": [
+      0.258,
+      0.484
+     ]
+    },
+    "residual_error": {
+     "k": 6,
+     "n": 37,
+     "rate": 0.162,
+     "ci95": [
+      0.077,
+      0.311
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 6,
+     "n": 9,
+     "rate": 0.667,
+     "ci95": [
+      0.354,
+      0.879
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 11,
+     "n": 12,
+     "rate": 0.917,
+     "ci95": [
+      0.646,
+      0.985
+     ]
+    },
+    "error_capture_clear": {
+     "k": 13,
+     "n": 18,
+     "rate": 0.722,
+     "ci95": [
+      0.491,
+      0.875
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 23,
+     "n": 30,
+     "rate": 0.767,
+     "ci95": [
+      0.591,
+      0.882
+     ]
+    },
+    "random_capture": 0.641,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "low_queue_confidence": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "low",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 20,
+     "n": 103,
+     "rate": 0.194,
+     "ci95": [
+      0.129,
+      0.281
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 6,
+     "n": 30,
+     "rate": 0.2,
+     "ci95": [
+      0.095,
+      0.373
+     ]
+    },
+    "escalation_precision": {
+     "k": 6,
+     "n": 20,
+     "rate": 0.3,
+     "ci95": [
+      0.145,
+      0.519
+     ]
+    },
+    "residual_error": {
+     "k": 24,
+     "n": 83,
+     "rate": 0.289,
+     "ci95": [
+      0.203,
+      0.394
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 1,
+     "n": 12,
+     "rate": 0.083,
+     "ci95": [
+      0.015,
+      0.354
+     ]
+    },
+    "error_capture_clear": {
+     "k": 5,
+     "n": 18,
+     "rate": 0.278,
+     "ci95": [
+      0.125,
+      0.509
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 6,
+     "n": 30,
+     "rate": 0.2,
+     "ci95": [
+      0.095,
+      0.373
+     ]
+    },
+    "random_capture": 0.194,
+    "reasons": {
+     "no_program_queue": 20
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "low",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 20,
+     "n": 103,
+     "rate": 0.194,
+     "ci95": [
+      0.129,
+      0.281
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 6,
+     "n": 30,
+     "rate": 0.2,
+     "ci95": [
+      0.095,
+      0.373
+     ]
+    },
+    "escalation_precision": {
+     "k": 6,
+     "n": 20,
+     "rate": 0.3,
+     "ci95": [
+      0.145,
+      0.519
+     ]
+    },
+    "residual_error": {
+     "k": 24,
+     "n": 83,
+     "rate": 0.289,
+     "ci95": [
+      0.203,
+      0.394
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 1,
+     "n": 12,
+     "rate": 0.083,
+     "ci95": [
+      0.015,
+      0.354
+     ]
+    },
+    "error_capture_clear": {
+     "k": 5,
+     "n": 18,
+     "rate": 0.278,
+     "ci95": [
+      0.125,
+      0.509
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 6,
+     "n": 30,
+     "rate": 0.2,
+     "ci95": [
+      0.095,
+      0.373
+     ]
+    },
+    "random_capture": 0.194,
+    "reasons": {
+     "no_program_queue": 20
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "low",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 66,
+     "n": 103,
+     "rate": 0.641,
+     "ci95": [
+      0.545,
+      0.727
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.521,
+      0.833
+     ]
+    },
+    "escalation_precision": {
+     "k": 21,
+     "n": 66,
+     "rate": 0.318,
+     "ci95": [
+      0.218,
+      0.438
+     ]
+    },
+    "residual_error": {
+     "k": 9,
+     "n": 37,
+     "rate": 0.243,
+     "ci95": [
+      0.134,
+      0.401
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 8,
+     "n": 9,
+     "rate": 0.889,
+     "ci95": [
+      0.565,
+      0.98
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 14,
+     "n": 18,
+     "rate": 0.778,
+     "ci95": [
+      0.548,
+      0.91
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "random_capture": 0.641,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "no_program_queue": 20
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "medium",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 23,
+     "n": 103,
+     "rate": 0.223,
+     "ci95": [
+      0.154,
+      0.313
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 9,
+     "n": 30,
+     "rate": 0.3,
+     "ci95": [
+      0.167,
+      0.479
+     ]
+    },
+    "escalation_precision": {
+     "k": 9,
+     "n": 23,
+     "rate": 0.391,
+     "ci95": [
+      0.222,
+      0.592
+     ]
+    },
+    "residual_error": {
+     "k": 21,
+     "n": 80,
+     "rate": 0.263,
+     "ci95": [
+      0.179,
+      0.368
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 3,
+     "n": 12,
+     "rate": 0.25,
+     "ci95": [
+      0.089,
+      0.532
+     ]
+    },
+    "error_capture_clear": {
+     "k": 6,
+     "n": 18,
+     "rate": 0.333,
+     "ci95": [
+      0.163,
+      0.563
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 8,
+     "n": 30,
+     "rate": 0.267,
+     "ci95": [
+      0.142,
+      0.444
+     ]
+    },
+    "random_capture": 0.223,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 12
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "medium",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 23,
+     "n": 103,
+     "rate": 0.223,
+     "ci95": [
+      0.154,
+      0.313
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 9,
+     "n": 30,
+     "rate": 0.3,
+     "ci95": [
+      0.167,
+      0.479
+     ]
+    },
+    "escalation_precision": {
+     "k": 9,
+     "n": 23,
+     "rate": 0.391,
+     "ci95": [
+      0.222,
+      0.592
+     ]
+    },
+    "residual_error": {
+     "k": 21,
+     "n": 80,
+     "rate": 0.263,
+     "ci95": [
+      0.179,
+      0.368
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 3,
+     "n": 12,
+     "rate": 0.25,
+     "ci95": [
+      0.089,
+      0.532
+     ]
+    },
+    "error_capture_clear": {
+     "k": 6,
+     "n": 18,
+     "rate": 0.333,
+     "ci95": [
+      0.163,
+      0.563
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 8,
+     "n": 30,
+     "rate": 0.267,
+     "ci95": [
+      0.142,
+      0.444
+     ]
+    },
+    "random_capture": 0.223,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 12
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "medium",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 66,
+     "n": 103,
+     "rate": 0.641,
+     "ci95": [
+      0.545,
+      0.727
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.521,
+      0.833
+     ]
+    },
+    "escalation_precision": {
+     "k": 21,
+     "n": 66,
+     "rate": 0.318,
+     "ci95": [
+      0.218,
+      0.438
+     ]
+    },
+    "residual_error": {
+     "k": 9,
+     "n": 37,
+     "rate": 0.243,
+     "ci95": [
+      0.134,
+      0.401
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 8,
+     "n": 9,
+     "rate": 0.889,
+     "ci95": [
+      0.565,
+      0.98
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 14,
+     "n": 18,
+     "rate": 0.778,
+     "ci95": [
+      0.548,
+      0.91
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "random_capture": 0.641,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "no_program_queue": 20,
+     "low_queue_confidence": 12
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "high",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 32,
+     "n": 103,
+     "rate": 0.311,
+     "ci95": [
+      0.229,
+      0.406
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "escalation_precision": {
+     "k": 17,
+     "n": 32,
+     "rate": 0.531,
+     "ci95": [
+      0.364,
+      0.691
+     ]
+    },
+    "residual_error": {
+     "k": 13,
+     "n": 71,
+     "rate": 0.183,
+     "ci95": [
+      0.11,
+      0.288
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 9,
+     "n": 12,
+     "rate": 0.75,
+     "ci95": [
+      0.468,
+      0.911
+     ]
+    },
+    "error_capture_clear": {
+     "k": 8,
+     "n": 18,
+     "rate": 0.444,
+     "ci95": [
+      0.246,
+      0.663
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 15,
+     "n": 30,
+     "rate": 0.5,
+     "ci95": [
+      0.332,
+      0.668
+     ]
+    },
+    "random_capture": 0.311,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "high",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 32,
+     "n": 103,
+     "rate": 0.311,
+     "ci95": [
+      0.229,
+      0.406
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "escalation_precision": {
+     "k": 17,
+     "n": 32,
+     "rate": 0.531,
+     "ci95": [
+      0.364,
+      0.691
+     ]
+    },
+    "residual_error": {
+     "k": 13,
+     "n": 71,
+     "rate": 0.183,
+     "ci95": [
+      0.11,
+      0.288
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 4,
+     "n": 9,
+     "rate": 0.444,
+     "ci95": [
+      0.189,
+      0.733
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 9,
+     "n": 12,
+     "rate": 0.75,
+     "ci95": [
+      0.468,
+      0.911
+     ]
+    },
+    "error_capture_clear": {
+     "k": 8,
+     "n": 18,
+     "rate": 0.444,
+     "ci95": [
+      0.246,
+      0.663
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 15,
+     "n": 30,
+     "rate": 0.5,
+     "ci95": [
+      0.332,
+      0.668
+     ]
+    },
+    "random_capture": 0.311,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": false,
+    "queue_floor": "high",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 71,
+     "n": 103,
+     "rate": 0.689,
+     "ci95": [
+      0.594,
+      0.771
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 26,
+     "n": 30,
+     "rate": 0.867,
+     "ci95": [
+      0.703,
+      0.947
+     ]
+    },
+    "escalation_precision": {
+     "k": 26,
+     "n": 71,
+     "rate": 0.366,
+     "ci95": [
+      0.264,
+      0.482
+     ]
+    },
+    "residual_error": {
+     "k": 4,
+     "n": 32,
+     "rate": 0.125,
+     "ci95": [
+      0.05,
+      0.281
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 8,
+     "n": 9,
+     "rate": 0.889,
+     "ci95": [
+      0.565,
+      0.98
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 11,
+     "n": 12,
+     "rate": 0.917,
+     "ci95": [
+      0.646,
+      0.985
+     ]
+    },
+    "error_capture_clear": {
+     "k": 15,
+     "n": 18,
+     "rate": 0.833,
+     "ci95": [
+      0.608,
+      0.942
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 23,
+     "n": 30,
+     "rate": 0.767,
+     "ci95": [
+      0.591,
+      0.882
+     ]
+    },
+    "random_capture": 0.689,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "no_program_queue": 20,
+     "low_queue_confidence": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "low",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 24,
+     "n": 103,
+     "rate": 0.233,
+     "ci95": [
+      0.162,
+      0.323
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "escalation_precision": {
+     "k": 17,
+     "n": 24,
+     "rate": 0.708,
+     "ci95": [
+      0.508,
+      0.851
+     ]
+    },
+    "residual_error": {
+     "k": 13,
+     "n": 79,
+     "rate": 0.165,
+     "ci95": [
+      0.099,
+      0.261
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 10,
+     "n": 18,
+     "rate": 0.556,
+     "ci95": [
+      0.337,
+      0.754
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 9,
+     "n": 30,
+     "rate": 0.3,
+     "ci95": [
+      0.167,
+      0.479
+     ]
+    },
+    "random_capture": 0.233,
+    "reasons": {
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "low",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 24,
+     "n": 103,
+     "rate": 0.233,
+     "ci95": [
+      0.162,
+      0.323
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 17,
+     "n": 30,
+     "rate": 0.567,
+     "ci95": [
+      0.392,
+      0.726
+     ]
+    },
+    "escalation_precision": {
+     "k": 17,
+     "n": 24,
+     "rate": 0.708,
+     "ci95": [
+      0.508,
+      0.851
+     ]
+    },
+    "residual_error": {
+     "k": 13,
+     "n": 79,
+     "rate": 0.165,
+     "ci95": [
+      0.099,
+      0.261
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 10,
+     "n": 18,
+     "rate": 0.556,
+     "ci95": [
+      0.337,
+      0.754
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 9,
+     "n": 30,
+     "rate": 0.3,
+     "ci95": [
+      0.167,
+      0.479
+     ]
+    },
+    "random_capture": 0.233,
+    "reasons": {
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "low",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 64,
+     "n": 103,
+     "rate": 0.621,
+     "ci95": [
+      0.525,
+      0.709
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.627,
+      0.905
+     ]
+    },
+    "escalation_precision": {
+     "k": 24,
+     "n": 64,
+     "rate": 0.375,
+     "ci95": [
+      0.267,
+      0.497
+     ]
+    },
+    "residual_error": {
+     "k": 6,
+     "n": 39,
+     "rate": 0.154,
+     "ci95": [
+      0.072,
+      0.297
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 6,
+     "n": 9,
+     "rate": 0.667,
+     "ci95": [
+      0.354,
+      0.879
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 9,
+     "n": 12,
+     "rate": 0.75,
+     "ci95": [
+      0.468,
+      0.911
+     ]
+    },
+    "error_capture_clear": {
+     "k": 15,
+     "n": 18,
+     "rate": 0.833,
+     "ci95": [
+      0.608,
+      0.942
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 18,
+     "n": 30,
+     "rate": 0.6,
+     "ci95": [
+      0.423,
+      0.754
+     ]
+    },
+    "random_capture": 0.621,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "medium",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 29,
+     "n": 103,
+     "rate": 0.282,
+     "ci95": [
+      0.204,
+      0.375
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "escalation_precision": {
+     "k": 19,
+     "n": 29,
+     "rate": 0.655,
+     "ci95": [
+      0.473,
+      0.801
+     ]
+    },
+    "residual_error": {
+     "k": 11,
+     "n": 74,
+     "rate": 0.149,
+     "ci95": [
+      0.085,
+      0.247
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 11,
+     "n": 18,
+     "rate": 0.611,
+     "ci95": [
+      0.386,
+      0.797
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 11,
+     "n": 30,
+     "rate": 0.367,
+     "ci95": [
+      0.219,
+      0.545
+     ]
+    },
+    "random_capture": 0.282,
+    "reasons": {
+     "low_queue_confidence": 12,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "medium",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 29,
+     "n": 103,
+     "rate": 0.282,
+     "ci95": [
+      0.204,
+      0.375
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "escalation_precision": {
+     "k": 19,
+     "n": 29,
+     "rate": 0.655,
+     "ci95": [
+      0.473,
+      0.801
+     ]
+    },
+    "residual_error": {
+     "k": 11,
+     "n": 74,
+     "rate": 0.149,
+     "ci95": [
+      0.085,
+      0.247
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 11,
+     "n": 18,
+     "rate": 0.611,
+     "ci95": [
+      0.386,
+      0.797
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 11,
+     "n": 30,
+     "rate": 0.367,
+     "ci95": [
+      0.219,
+      0.545
+     ]
+    },
+    "random_capture": 0.282,
+    "reasons": {
+     "low_queue_confidence": 12,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "medium",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 65,
+     "n": 103,
+     "rate": 0.631,
+     "ci95": [
+      0.535,
+      0.718
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.627,
+      0.905
+     ]
+    },
+    "escalation_precision": {
+     "k": 24,
+     "n": 65,
+     "rate": 0.369,
+     "ci95": [
+      0.262,
+      0.491
+     ]
+    },
+    "residual_error": {
+     "k": 6,
+     "n": 38,
+     "rate": 0.158,
+     "ci95": [
+      0.074,
+      0.304
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 6,
+     "n": 9,
+     "rate": 0.667,
+     "ci95": [
+      0.354,
+      0.879
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 9,
+     "n": 12,
+     "rate": 0.75,
+     "ci95": [
+      0.468,
+      0.911
+     ]
+    },
+    "error_capture_clear": {
+     "k": 15,
+     "n": 18,
+     "rate": 0.833,
+     "ci95": [
+      0.608,
+      0.942
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "random_capture": 0.631,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "low_queue_confidence": 12,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "high",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 35,
+     "n": 103,
+     "rate": 0.34,
+     "ci95": [
+      0.256,
+      0.436
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 22,
+     "n": 30,
+     "rate": 0.733,
+     "ci95": [
+      0.556,
+      0.858
+     ]
+    },
+    "escalation_precision": {
+     "k": 22,
+     "n": 35,
+     "rate": 0.629,
+     "ci95": [
+      0.463,
+      0.768
+     ]
+    },
+    "residual_error": {
+     "k": 8,
+     "n": 68,
+     "rate": 0.118,
+     "ci95": [
+      0.061,
+      0.215
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 10,
+     "n": 12,
+     "rate": 0.833,
+     "ci95": [
+      0.552,
+      0.953
+     ]
+    },
+    "error_capture_clear": {
+     "k": 12,
+     "n": 18,
+     "rate": 0.667,
+     "ci95": [
+      0.437,
+      0.837
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 16,
+     "n": 30,
+     "rate": 0.533,
+     "ci95": [
+      0.361,
+      0.698
+     ]
+    },
+    "random_capture": 0.34,
+    "reasons": {
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "high",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 35,
+     "n": 103,
+     "rate": 0.34,
+     "ci95": [
+      0.256,
+      0.436
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 22,
+     "n": 30,
+     "rate": 0.733,
+     "ci95": [
+      0.556,
+      0.858
+     ]
+    },
+    "escalation_precision": {
+     "k": 22,
+     "n": 35,
+     "rate": 0.629,
+     "ci95": [
+      0.463,
+      0.768
+     ]
+    },
+    "residual_error": {
+     "k": 8,
+     "n": 68,
+     "rate": 0.118,
+     "ci95": [
+      0.061,
+      0.215
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 5,
+     "n": 9,
+     "rate": 0.556,
+     "ci95": [
+      0.267,
+      0.811
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 10,
+     "n": 12,
+     "rate": 0.833,
+     "ci95": [
+      0.552,
+      0.953
+     ]
+    },
+    "error_capture_clear": {
+     "k": 12,
+     "n": 18,
+     "rate": 0.667,
+     "ci95": [
+      0.437,
+      0.837
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 16,
+     "n": 30,
+     "rate": 0.533,
+     "ci95": [
+      0.361,
+      0.698
+     ]
+    },
+    "random_capture": 0.34,
+    "reasons": {
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": false,
+    "disagree": true,
+    "queue_floor": "high",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 69,
+     "n": 103,
+     "rate": 0.67,
+     "ci95": [
+      0.574,
+      0.753
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 26,
+     "n": 30,
+     "rate": 0.867,
+     "ci95": [
+      0.703,
+      0.947
+     ]
+    },
+    "escalation_precision": {
+     "k": 26,
+     "n": 69,
+     "rate": 0.377,
+     "ci95": [
+      0.272,
+      0.495
+     ]
+    },
+    "residual_error": {
+     "k": 4,
+     "n": 34,
+     "rate": 0.118,
+     "ci95": [
+      0.047,
+      0.266
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 6,
+     "n": 9,
+     "rate": 0.667,
+     "ci95": [
+      0.354,
+      0.879
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 11,
+     "n": 12,
+     "rate": 0.917,
+     "ci95": [
+      0.646,
+      0.985
+     ]
+    },
+    "error_capture_clear": {
+     "k": 15,
+     "n": 18,
+     "rate": 0.833,
+     "ci95": [
+      0.608,
+      0.942
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 23,
+     "n": 30,
+     "rate": 0.767,
+     "ci95": [
+      0.591,
+      0.882
+     ]
+    },
+    "random_capture": 0.67,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "low",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 35,
+     "n": 103,
+     "rate": 0.34,
+     "ci95": [
+      0.256,
+      0.436
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "escalation_precision": {
+     "k": 19,
+     "n": 35,
+     "rate": 0.543,
+     "ci95": [
+      0.382,
+      0.695
+     ]
+    },
+    "residual_error": {
+     "k": 11,
+     "n": 68,
+     "rate": 0.162,
+     "ci95": [
+      0.093,
+      0.267
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 12,
+     "n": 18,
+     "rate": 0.667,
+     "ci95": [
+      0.437,
+      0.837
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "random_capture": 0.34,
+    "reasons": {
+     "no_program_queue": 20,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "low",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 35,
+     "n": 103,
+     "rate": 0.34,
+     "ci95": [
+      0.256,
+      0.436
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 19,
+     "n": 30,
+     "rate": 0.633,
+     "ci95": [
+      0.455,
+      0.781
+     ]
+    },
+    "escalation_precision": {
+     "k": 19,
+     "n": 35,
+     "rate": 0.543,
+     "ci95": [
+      0.382,
+      0.695
+     ]
+    },
+    "residual_error": {
+     "k": 11,
+     "n": 68,
+     "rate": 0.162,
+     "ci95": [
+      0.093,
+      0.267
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 7,
+     "n": 12,
+     "rate": 0.583,
+     "ci95": [
+      0.32,
+      0.807
+     ]
+    },
+    "error_capture_clear": {
+     "k": 12,
+     "n": 18,
+     "rate": 0.667,
+     "ci95": [
+      0.437,
+      0.837
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "random_capture": 0.34,
+    "reasons": {
+     "no_program_queue": 20,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "low",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 72,
+     "n": 103,
+     "rate": 0.699,
+     "ci95": [
+      0.605,
+      0.779
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 26,
+     "n": 30,
+     "rate": 0.867,
+     "ci95": [
+      0.703,
+      0.947
+     ]
+    },
+    "escalation_precision": {
+     "k": 26,
+     "n": 72,
+     "rate": 0.361,
+     "ci95": [
+      0.26,
+      0.476
+     ]
+    },
+    "residual_error": {
+     "k": 4,
+     "n": 31,
+     "rate": 0.129,
+     "ci95": [
+      0.051,
+      0.289
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 8,
+     "n": 9,
+     "rate": 0.889,
+     "ci95": [
+      0.565,
+      0.98
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 9,
+     "n": 12,
+     "rate": 0.75,
+     "ci95": [
+      0.468,
+      0.911
+     ]
+    },
+    "error_capture_clear": {
+     "k": 17,
+     "n": 18,
+     "rate": 0.944,
+     "ci95": [
+      0.742,
+      0.99
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.521,
+      0.833
+     ]
+    },
+    "random_capture": 0.699,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "no_program_queue": 20,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "medium",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 37,
+     "n": 103,
+     "rate": 0.359,
+     "ci95": [
+      0.273,
+      0.455
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.521,
+      0.833
+     ]
+    },
+    "escalation_precision": {
+     "k": 21,
+     "n": 37,
+     "rate": 0.568,
+     "ci95": [
+      0.409,
+      0.713
+     ]
+    },
+    "residual_error": {
+     "k": 9,
+     "n": 66,
+     "rate": 0.136,
+     "ci95": [
+      0.073,
+      0.239
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 13,
+     "n": 18,
+     "rate": 0.722,
+     "ci95": [
+      0.491,
+      0.875
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 13,
+     "n": 30,
+     "rate": 0.433,
+     "ci95": [
+      0.274,
+      0.608
+     ]
+    },
+    "random_capture": 0.359,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 12,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "medium",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 37,
+     "n": 103,
+     "rate": 0.359,
+     "ci95": [
+      0.273,
+      0.455
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.521,
+      0.833
+     ]
+    },
+    "escalation_precision": {
+     "k": 21,
+     "n": 37,
+     "rate": 0.568,
+     "ci95": [
+      0.409,
+      0.713
+     ]
+    },
+    "residual_error": {
+     "k": 9,
+     "n": 66,
+     "rate": 0.136,
+     "ci95": [
+      0.073,
+      0.239
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 8,
+     "n": 12,
+     "rate": 0.667,
+     "ci95": [
+      0.391,
+      0.862
+     ]
+    },
+    "error_capture_clear": {
+     "k": 13,
+     "n": 18,
+     "rate": 0.722,
+     "ci95": [
+      0.491,
+      0.875
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 13,
+     "n": 30,
+     "rate": 0.433,
+     "ci95": [
+      0.274,
+      0.608
+     ]
+    },
+    "random_capture": 0.359,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 12,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "medium",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 72,
+     "n": 103,
+     "rate": 0.699,
+     "ci95": [
+      0.605,
+      0.779
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 26,
+     "n": 30,
+     "rate": 0.867,
+     "ci95": [
+      0.703,
+      0.947
+     ]
+    },
+    "escalation_precision": {
+     "k": 26,
+     "n": 72,
+     "rate": 0.361,
+     "ci95": [
+      0.26,
+      0.476
+     ]
+    },
+    "residual_error": {
+     "k": 4,
+     "n": 31,
+     "rate": 0.129,
+     "ci95": [
+      0.051,
+      0.289
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 8,
+     "n": 9,
+     "rate": 0.889,
+     "ci95": [
+      0.565,
+      0.98
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 9,
+     "n": 12,
+     "rate": 0.75,
+     "ci95": [
+      0.468,
+      0.911
+     ]
+    },
+    "error_capture_clear": {
+     "k": 17,
+     "n": 18,
+     "rate": 0.944,
+     "ci95": [
+      0.742,
+      0.99
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 21,
+     "n": 30,
+     "rate": 0.7,
+     "ci95": [
+      0.521,
+      0.833
+     ]
+    },
+    "random_capture": 0.699,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "no_program_queue": 20,
+     "low_queue_confidence": 12,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "high",
+    "priority_floor": "low",
+    "n": 103,
+    "escalated": {
+     "k": 41,
+     "n": 103,
+     "rate": 0.398,
+     "ci95": [
+      0.309,
+      0.495
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.627,
+      0.905
+     ]
+    },
+    "escalation_precision": {
+     "k": 24,
+     "n": 41,
+     "rate": 0.585,
+     "ci95": [
+      0.434,
+      0.722
+     ]
+    },
+    "residual_error": {
+     "k": 6,
+     "n": 62,
+     "rate": 0.097,
+     "ci95": [
+      0.045,
+      0.195
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 10,
+     "n": 12,
+     "rate": 0.833,
+     "ci95": [
+      0.552,
+      0.953
+     ]
+    },
+    "error_capture_clear": {
+     "k": 14,
+     "n": 18,
+     "rate": 0.778,
+     "ci95": [
+      0.548,
+      0.91
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 16,
+     "n": 30,
+     "rate": 0.533,
+     "ci95": [
+      0.361,
+      0.698
+     ]
+    },
+    "random_capture": 0.398,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "high",
+    "priority_floor": "medium",
+    "n": 103,
+    "escalated": {
+     "k": 41,
+     "n": 103,
+     "rate": 0.398,
+     "ci95": [
+      0.309,
+      0.495
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 24,
+     "n": 30,
+     "rate": 0.8,
+     "ci95": [
+      0.627,
+      0.905
+     ]
+    },
+    "escalation_precision": {
+     "k": 24,
+     "n": 41,
+     "rate": 0.585,
+     "ci95": [
+      0.434,
+      0.722
+     ]
+    },
+    "residual_error": {
+     "k": 6,
+     "n": 62,
+     "rate": 0.097,
+     "ci95": [
+      0.045,
+      0.195
+     ]
+    },
+    "urgent_unreached": {
+     "k": 1,
+     "n": 29,
+     "rate": 0.034,
+     "ci95": [
+      0.006,
+      0.172
+     ]
+    },
+    "under_triage_capture": {
+     "k": 7,
+     "n": 9,
+     "rate": 0.778,
+     "ci95": [
+      0.453,
+      0.937
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 10,
+     "n": 12,
+     "rate": 0.833,
+     "ci95": [
+      0.552,
+      0.953
+     ]
+    },
+    "error_capture_clear": {
+     "k": 14,
+     "n": 18,
+     "rate": 0.778,
+     "ci95": [
+      0.548,
+      0.91
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 16,
+     "n": 30,
+     "rate": 0.533,
+     "ci95": [
+      0.361,
+      0.698
+     ]
+    },
+    "random_capture": 0.398,
+    "reasons": {
+     "no_program_queue": 20,
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   },
+   {
+    "rules": true,
+    "disagree": true,
+    "queue_floor": "high",
+    "priority_floor": "high",
+    "n": 103,
+    "escalated": {
+     "k": 74,
+     "n": 103,
+     "rate": 0.718,
+     "ci95": [
+      0.625,
+      0.796
+     ]
+    },
+    "error_rate": {
+     "k": 30,
+     "n": 103,
+     "rate": 0.291,
+     "ci95": [
+      0.212,
+      0.385
+     ]
+    },
+    "error_capture": {
+     "k": 28,
+     "n": 30,
+     "rate": 0.933,
+     "ci95": [
+      0.787,
+      0.982
+     ]
+    },
+    "escalation_precision": {
+     "k": 28,
+     "n": 74,
+     "rate": 0.378,
+     "ci95": [
+      0.276,
+      0.492
+     ]
+    },
+    "residual_error": {
+     "k": 2,
+     "n": 29,
+     "rate": 0.069,
+     "ci95": [
+      0.019,
+      0.22
+     ]
+    },
+    "urgent_unreached": {
+     "k": 0,
+     "n": 29,
+     "rate": 0.0,
+     "ci95": [
+      0.0,
+      0.117
+     ]
+    },
+    "under_triage_capture": {
+     "k": 8,
+     "n": 9,
+     "rate": 0.889,
+     "ci95": [
+      0.565,
+      0.98
+     ]
+    },
+    "error_rate_unsure": {
+     "k": 12,
+     "n": 30,
+     "rate": 0.4,
+     "ci95": [
+      0.246,
+      0.577
+     ]
+    },
+    "error_rate_clear": {
+     "k": 18,
+     "n": 73,
+     "rate": 0.247,
+     "ci95": [
+      0.162,
+      0.356
+     ]
+    },
+    "error_capture_unsure": {
+     "k": 11,
+     "n": 12,
+     "rate": 0.917,
+     "ci95": [
+      0.646,
+      0.985
+     ]
+    },
+    "error_capture_clear": {
+     "k": 17,
+     "n": 18,
+     "rate": 0.944,
+     "ci95": [
+      0.742,
+      0.99
+     ]
+    },
+    "ambiguous_capture": {
+     "k": 23,
+     "n": 30,
+     "rate": 0.767,
+     "ci95": [
+      0.591,
+      0.882
+     ]
+    },
+    "random_capture": 0.718,
+    "reasons": {
+     "low_priority_confidence": 54,
+     "no_program_queue": 20,
+     "low_queue_confidence": 24,
+     "second_opinion_differs": 24
+    }
+   }
+  ],
+  "confidence_mix": {
+   "queue": {
+    "high": 79,
+    "low": 12,
+    "medium": 12
+   },
+   "priority": {
+    "high": 49,
+    "medium": 54
+   }
+  }
+ }
+}
