@@ -14,9 +14,18 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
 from voyageai.error import VoyageError
 
-from support_desk_assistant.answer.pipeline import Outcome, SystemPromptNotReady, execute, prepare
+from support_desk_assistant.answer.pipeline import (
+    STATUS_GATE,
+    STATUS_OK,
+    Outcome,
+    SystemPromptNotReady,
+    execute,
+    prepare,
+)
+from support_desk_assistant.api.tickets import TriageFn, add_ticket_routes
 from support_desk_assistant.config import Settings, get_settings
 from support_desk_assistant.ingest.embed import Embedder, make_voyage_client
+from support_desk_assistant.triage.store import TicketStore
 
 STATUS_VALIDATION_FAILED = "validation_failed"
 VALIDATION_FAILED_REASON = "I could not verify the sources for this answer, so I am not showing it."
@@ -46,6 +55,24 @@ class AskResponse(BaseModel):
     cost_cad: float
     latency_ms: int
     cache_hit: bool
+    # No usable answer: a person should take the question (docs/decisions.md #29).
+    escalate: bool
+    escalate_reason: str | None  # no_relevant_sources, model_abstained, validation_failed, or the
+    # generation failure (max_tokens, refusal, invalid_output)
+
+
+def escalation_for(abstained: bool, status: str) -> tuple[bool, str | None]:
+    """Escalate whenever the response carries no answer. No model call: the signals already
+    exist (the retrieval gate, the model's abstention, citation validation, generation failures)."""
+    if status == STATUS_VALIDATION_FAILED:
+        return True, STATUS_VALIDATION_FAILED
+    if status == STATUS_GATE:
+        return True, "no_relevant_sources"
+    if status != STATUS_OK:
+        return True, status
+    if abstained:
+        return True, "model_abstained"
+    return False, None
 
 
 def make_ask_fn(settings: Settings) -> AskFn:
@@ -82,7 +109,10 @@ def to_response(outcome: Outcome) -> AskResponse:
             cost_cad=outcome.cost_cad,
             latency_ms=outcome.latency_ms,
             cache_hit=outcome.cache_hit,
+            escalate=True,
+            escalate_reason=STATUS_VALIDATION_FAILED,
         )
+    escalate, reason = escalation_for(result.abstained, status)
     by_id = {h.chunk_id: h for h in outcome.hits}
     citations = [
         CitationOut(n=n, title=by_id[cid].title, url=by_id[cid].url)
@@ -99,10 +129,18 @@ def to_response(outcome: Outcome) -> AskResponse:
         cost_cad=outcome.cost_cad,
         latency_ms=outcome.latency_ms,
         cache_hit=outcome.cache_hit,
+        escalate=escalate,
+        escalate_reason=reason,
     )
 
 
-def create_app(settings: Settings | None = None, ask_fn: AskFn | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    ask_fn: AskFn | None = None,
+    triage_fn: TriageFn | None = None,
+    store: TicketStore | None = None,
+    second_fn: TriageFn | None = None,
+) -> FastAPI:
     settings = settings or get_settings()
     ask = ask_fn or make_ask_fn(settings)
     app = FastAPI(title="support-desk-assistant", version="0.1.0")
@@ -131,4 +169,5 @@ def create_app(settings: Settings | None = None, ask_fn: AskFn | None = None) ->
         except (anthropic.APIError, VoyageError) as exc:
             raise HTTPException(502, "upstream model service error") from exc
 
+    add_ticket_routes(app, settings, triage_fn=triage_fn, store=store, second_fn=second_fn)
     return app
