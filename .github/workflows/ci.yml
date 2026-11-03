@@ -29,9 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: python3 scripts/check_commit_msg.py --subject "$PR_TITLE"
+      # GitHub adds " (#N)" to the subject of a squashed commit, so check the title as it will read.
+      - run: python3 scripts/check_commit_msg.py --subject "$PR_TITLE (#$PR_NUMBER)"
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
 
   # Builds the API image and checks the parts that only exist inside it (decisions.md #31).
   docker:
