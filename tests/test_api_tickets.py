@@ -5,6 +5,7 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import API_KEY
 from support_desk_assistant.api.app import create_app
 from support_desk_assistant.config import EscalationSettings, Settings, TriageSettings
 from support_desk_assistant.triage.pipeline import (
@@ -47,12 +48,12 @@ class Stub:
 def make(tmp_path, result=None, **settings_kw):
     stub = Stub(result or ok())
     app = create_app(
-        Settings(**settings_kw),
+        Settings(sda_api_key=API_KEY, **settings_kw),
         ask_fn=lambda *a: None,
         triage_fn=stub,
         store=TicketStore(tmp_path / "t.sqlite"),
     )
-    return TestClient(app, raise_server_exceptions=False), stub
+    return TestClient(app, raise_server_exceptions=False, headers={"X-API-Key": API_KEY}), stub
 
 
 def test_create_then_get(tmp_path):
@@ -135,13 +136,13 @@ def second(result, cost=0.0009, latency=1200):
 
 def made(tmp_path, first, second_fn, **settings_kw):
     app = create_app(
-        Settings(**settings_kw),
+        Settings(sda_api_key=API_KEY, **settings_kw),
         ask_fn=lambda *a: None,
         triage_fn=Stub(first),
         store=TicketStore(tmp_path / "t.sqlite"),
         second_fn=second_fn,
     )
-    return TestClient(app, raise_server_exceptions=False)
+    return TestClient(app, raise_server_exceptions=False, headers={"X-API-Key": API_KEY})
 
 
 def test_a_disagreeing_second_pass_escalates_and_its_cost_is_added(tmp_path):

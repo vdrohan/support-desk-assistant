@@ -7,7 +7,7 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
 
 - `src/support_desk_assistant/`: the installable package (uv_build, src layout)
   - `config.py`: the **only** place for config values (pydantic-settings; override with `SDA_*` env vars)
-  - `api/`: FastAPI app (`app.py`: `create_app`, `POST /ask`, `GET /health`; `__main__.py` is `sda-api`)
+  - `api/`: FastAPI app (`app.py`: `create_app`, `POST /ask`, `GET /health`; `auth.py`: the `X-API-Key` check, fails closed; `__main__.py` is `sda-api`)
   - `ingest/`: `crawl.py` → `chunk.py` → `embed.py` → `index.py` (Qdrant sync); `__main__.py` is `sda-ingest`
   - `triage/`: `schema.py` (queue, priority, confidence, `TriageResult`), `pipeline.py` (`triage_ticket`), `escalate.py` (`escalate`: `needs_review` and reasons), `store.py` (SQLite `TicketStore`, migrates old databases on open; keeps a person's override beside the model's answer); routes in `api/tickets.py` (including `POST /tickets/{id}/override`)
   - `retrieve.py`: `search()` and the `sda-search` CLI
@@ -27,7 +27,7 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
 - `tests/`: pytest; fixtures in `tests/fixtures/`. No live network in tests: use `httpx.MockTransport`, `tests/fakes.py` (fake Voyage) and `QdrantClient(":memory:")`
 - `data/manifest.jsonl`: committed corpus definition. Gitignored: `data/raw/`, `data/processed/`, `data/chunks.jsonl`, `data/cache/` (embedding cache)
 - `data/eval/`: versioned eval datasets (`retrieval_v1.jsonl`, `eval_set_v1.jsonl` = accepted answer eval set, `judge_calibration.jsonl` = human labels for the judge) and `results/` (committed). Gitignored: `candidates.jsonl`, `review_state.json`, `review.html`, `judge_review.md`, `runs/`
-- `compose.yaml`: Qdrant (and later the API)
+- `compose.yaml`: Qdrant and the API (`api` service, built from `Dockerfile`; `.dockerignore` is an allowlist)
 
 ## Commands
 
@@ -44,7 +44,7 @@ uv run sda-eval-triage-label --build   # merge labels into the set. (--yes would
 uv run sda-eval-triage-review [--status | --terminal | --show [--all] | --export | --apply FILE [--labelled-by NAME]]   # offline
 uv run sda-eval-triage [--yes] [--limit N]   # dry run by default; --yes calls Claude (capped)
 uv run sda-eval-escalation [--split dev|test] [--second-opinion] [--yes]   # dry run by default; replays cached responses, an uncached item costs a Haiku call (the shipped policy needs --second-opinion)
-uv run sda-api                   # serve POST /ask on 127.0.0.1:8000 (needs the Qdrant tunnel and both API keys)
+uv run sda-api                   # serve POST /ask on 127.0.0.1:8000 (needs the Qdrant tunnel, both API keys and SDA_API_KEY; refuses to start without it)
 uv run sda-eval-retrieval [--validate] [--collection X] [-k 5]
 uv run sda-eval-draft [--dry-run] [--yes] [--force] [--seed N] [--out FILE]   # Claude API, costs money (mock in tests)
 uv run sda-eval-review [--status | --export | --apply FILE] [--category C]   # offline
@@ -53,6 +53,7 @@ uv run sda-eval-answers --export [RESULTS] [--reveal] | --import-labels SHEET [-
 uv run pre-commit run --all-files
 uv add <pkg> / uv add --dev <pkg>
 docker compose up -d qdrant      # on the deploy host
+docker compose up -d --build api # the API there (needs .env with the three keys; Docker is not installed on the dev Mac, CI builds the image)
 ```
 
 Python is pinned to 3.12 (`.python-version`). Always go through `uv run`; don't use the system python.
@@ -60,7 +61,7 @@ Python is pinned to 3.12 (`.python-version`). Always go through `uv run`; don't 
 ## Rules
 
 - **Secrets:** never read, print, create or commit `.env`. Keys come from `.env`; the variable names are in `.env.example`. If a new key is needed, add its name to `.env.example` and nothing else.
-- **Docker:** every published port binds to `127.0.0.1` (`"127.0.0.1:PORT:PORT"`). Never use a bare `"PORT:PORT"`. Pin image versions.
+- **Docker:** every published port binds to `127.0.0.1` (`"127.0.0.1:PORT:PORT"`). Never use a bare `"PORT:PORT"`. Pin image versions (the API image's base is pinned by tag and digest in both `FROM` lines; keep them identical).
 - **Config:** chunk size, top_k, model names, collection names and similar values live only in `src/support_desk_assistant/config.py`. Never hardcode them elsewhere.
 - **Before committing:** run `uv run ruff check .` and `uv run pytest`; both must pass.
 - **Dependencies:** add them with `uv add`, and commit `uv.lock`. Keep ruff's version in `pyproject.toml` the same as its rev in `.pre-commit-config.yaml`.

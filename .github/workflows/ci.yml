@@ -20,3 +20,33 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest
+
+  # Builds the API image and checks the parts that only exist inside it (decisions.md #31).
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: docker build -t sda-api:ci .
+      - name: Without a key the container must not start
+        run: |
+          if docker run --rm sda-api:ci; then
+            echo "the API started without SDA_API_KEY" >&2
+            exit 1
+          fi
+      - name: With a key it starts, health is open, /ask is not, and it is not root
+        run: |
+          docker run -d --name api -p 127.0.0.1:8000:8000 \
+            -e SDA_API__HOST=0.0.0.0 -e SDA_API_KEY=ci-only-throwaway-key-0123456789 sda-api:ci
+          for _ in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:8000/health && break
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/health
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8000/ask \
+            -H 'content-type: application/json' -d '{"question": "q"}')
+          test "$code" = 401
+          test "$(docker exec api id -u)" != 0
+          docker exec api test -f prompts/answer_system.md
+          docker exec api test -f data/manifest.jsonl
+      - if: failure()
+        run: docker logs api || true

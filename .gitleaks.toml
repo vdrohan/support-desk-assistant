@@ -11,3 +11,12 @@ regexTarget = "line"
 regexes = ['''"(answer|judge)_cache_key": "[0-9a-f]{64}"''']
 paths = ['''data/eval/results/.*\.jsonl$''']
 condition = "AND"
+
+# The fake API key that tests send in X-API-Key (decision 31). Narrow on purpose: one file, one
+# exact line, so a real key pasted anywhere else is still caught.
+[[allowlists]]
+description = "fake test API key for the auth tests"
+regexTarget = "line"
+regexes = ['''API_KEY = "test-api-key-0123456789abcdef"''']
+paths = ['''tests/fakes\.py$''']
+condition = "AND"
