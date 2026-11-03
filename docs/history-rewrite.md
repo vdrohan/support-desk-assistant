@@ -106,3 +106,62 @@ Three things to know:
 | 45ca7c0 | 7953792 | feat: add canada.ca corpus crawler (5 programs, 129 pages) |
 | 5da2a4a | aaa2005 | chore: add project foundation (src layout, uv, ruff, pytest) |
 | 1cdb30f | e59fc57 | chore: add project layout, Compose skeleton and env template |
+
+## Third rewrite, 2026-11-03
+
+The `Co-Authored-By: Claude` line was removed from the 47 commit messages that carried it, and one commit body that named a private repository was reworded (decisions #33). Nothing else changed: for every commit the subject, files, author, committer, dates and parents are the same (checked commit by commit, and the final tree is identical). Hashes changed for 50 of the 57 commits; the first seven are untouched.
+
+Hashes in older files may need more than one lookup. A hash from before the second rewrite goes through the second table, then this one. The pull request pages for #2, #4, #6, #7 and #8 still link to the original commits. The two squash commits that GitHub made (#6 and #7) were signed and showed "Verified"; the rewritten copies are unsigned.
+
+| old | new | subject |
+|---|---|---|
+| d1e49dc | 1465429 | docs: add a what-I-learned section to the README (#7) |
+| 1ca63ad | e12afc1 | chore: enforce commit message style and add a changelog (#6) |
+| 0e65785 | 4165cc4 | Merge pull request #4: Phase 4 and README first-screen rewrite |
+| 402f487 | 3c101cd | docs: rewrite README first screen with results table and examples |
+| 786eee1 | e1fe534 | docs: describe Phase 4 as built and checked in CI, not deployed |
+| e7424e7 | 0b056d1 | feat: add API key, Dockerfile and Compose service (Phase 4) |
+| c89b44d | 240b910 | Merge pull request #2: Phases 2 and 3, triage and escalation |
+| 5d8afe7 | cffa919 | feat: add ticket override endpoint (POST /tickets/{id}/override) |
+| 161770c | fe5e729 | docs: record escalation test run and add the write-up |
+| e901fb6 | 4345fce | feat: add ticket escalation (needs_review) and triage set v2 |
+| dd0b5c5 | 180e231 | eval: record triage test-split run (queue 0.90, urgent recall 0.95) |
+| c9786bd | 7ff677c | eval: add 50 triage gold labels with provenance and dev score |
+| bb66e9f | 515a8cc | docs: revise triage eval design (decision 28), README and CLAUDE.md |
+| 99deb51 | b200902 | eval: design triage eval v2 with scenario-drafted tickets |
+| 842d4e0 | 1ee4e67 | feat: add triage eval runner (sda-eval-triage) |
+| 51430e0 | 83e8c98 | feat: add triage eval ticket drafting and review tools |
+| 3a4730d | 5a3d1e4 | feat: add ticket triage core, SQLite store and /tickets routes |
+| 47789b9 | ab06149 | feat: add POST /ask endpoint and sda-api (decision 27) |
+| f73a530 | 0b60610 | eval: record held-out out-of-scope probe run (9/10 abstained) |
+| cb98ddf | a7295c9 | eval: add 10 held-out out-of-scope probes |
+| f8b3b43 | 21503af | eval: record run 5 on eval set v2 (7/7 abstention) |
+| a661f70 | 0edc8c0 | eval: add eval set v2 with ev-030 and ev-031 relabelled |
+| 92e290c | 7cbe60c | eval: record run 4 (abstained-first schema), recall 4/9 to 7/9 |
+| 55d70fd | b326cab | fix: generate abstained and abstain_reason before the answer text |
+| e7198af | 8dcf36a | eval: record run 3 (abstention prompt only), no effect (4/9) |
+| 3264222 | f7fac2e | prompt: abstain when the chunks answer none of the asked parts |
+| 8c2739b | 4fffb61 | docs: map old commit hashes to the rewritten ones |
+| cfd190b | 6d1bf37 | docs: add judge audit and run 2a; move impact log out of repo |
+| 8c705dd | 5cdb5e0 | eval: add 27 constructed absent cases to judge calibration |
+| 0883e0d | 860b910 | eval: record answer-eval baseline run 2 (judge v2) |
+| e6d63b6 | 777b206 | feat: judge v2 with reason before verdict and multi-benefit rule |
+| 75cd1e7 | 2293757 | eval: record answer-eval baseline run 1 (answer cap 1000) |
+| 0dda041 | 32ec8ad | fix: raise Haiku answer max_tokens from 500 to 1000 (decision 24) |
+| 95540ce | 641a30b | fix: exclude max_tokens and refusal fallbacks from false-abstention |
+| c7e94c9 | aaf41a8 | eval: record first full answer-eval run |
+| 85ccc1d | 6bcbed5 | chore: ignore eval review leftovers (candidate backup, decision lists) |
+| 50b59ad | 4ffb386 | chore: ignore .claude/worktrees, note decision numbering |
+| d9a8d60 | d5cd004 | feat: make --calibrate a dry run by default and enforce the cap |
+| e2eef46 | b5f7bb6 | docs: add decision 23, impact log and answer eval usage notes |
+| 9314aff | c6be8d9 | feat: add answer eval runner with breakdowns and judge calibration |
+| 2619cf7 | 2d2e590 | feat: add answer eval set v1 (58 questions) |
+| b9e0a44 | f990245 | prompt: tighten eval drafter rules |
+| 14c4e4c | 59d3682 | ci: drop unsupported python-version-file input from setup-uv |
+| 28cd8a7 | 3465207 | feat: add Stage A eval set drafting and review tools |
+| d1b58e0 | 387eb1d | prompt: flag gaps in the documents, cite every chunk used |
+| ca77569 | 656cdd7 | prompt: answer directly when facts are given, trim tangents |
+| ea5293a | 500b776 | feat: add answer system prompt v1 (rules only) |
+| 522ce39 | 6116960 | feat: implement validate_answer (hand-written) |
+| f6765d3 | 1b75995 | feat: add answer step pipeline (validator pending) |
+| 42f9f64 | 513c429 | ci: add lint and test workflow |
