@@ -245,6 +245,17 @@ docker compose up -d --build api     # needs .env there with ANTHROPIC_API_KEY, 
 
 The image holds the code, the prompts and the corpus manifest and nothing else; keys come from `.env` when it starts. Port 8000 is published on the host's loopback only, so reach it through the SSH tunnel, as with Qdrant. Tickets live in the `api_db` volume: back that one up. CI builds the image on every pull request and checks that it refuses to start without a key. The Compose service itself has never been started anywhere: the API is not deployed (decision 31).
 
+## What I learned
+
+I built this to learn how to build and measure an AI tool, not to run one every day. Here's what stuck.
+
+- The order of fields in the model's output matters. The model writes them top to bottom, so my answers explained first and only then said whether to abstain. It would write "the documents don't say" and then answer anyway. Rewording the prompt did nothing. Moving the abstain flag to the top took abstention from 4 of 9 to 7 of 9. My judge had the same bug.
+- Set the pass mark before you run the test. I wrote the escalation targets down first and reported each one as met or not met. One was met by a single ticket, and I said so.
+- A test set only counts once. After I'd read its results I couldn't tune the prompt on it and still trust the score, so I built a second set.
+- Most of my labels came from models, not people. I wrote that in the write-up, because a score is only as good as the labels behind it.
+- With 50 to 100 items, a score of 0.82 could really be anywhere from 0.70 to 0.90. So every number has its range next to it.
+- Cost stayed small because I planned for it. Evals are dry runs by default, there's a spend cap, and a full answer eval costs about CA$0.05.
+
 ## Disclaimer
 
 This is an independent portfolio and research project. It is not affiliated with or endorsed by the Government of Canada, and its answers are not legal, financial or benefits advice. Answers can be wrong or out of date: check the official canada.ca page. The corpus text belongs to the Government of Canada (see [Corpus](#corpus)); the code is MIT-licensed.
