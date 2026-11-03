@@ -5,6 +5,8 @@ import zlib
 from types import SimpleNamespace
 
 DIM = 32
+# A valid key for tests that build the API (longer than ApiSettings.min_key_chars).
+API_KEY = "test-api-key-0123456789abcdef"
 
 
 def word_count(text: str) -> int:
