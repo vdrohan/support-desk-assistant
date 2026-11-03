@@ -114,7 +114,7 @@ The policy was chosen on dev, from 72 combinations on 19 errors, and not touched
 - **Synthetic tickets.** Tickets are model-drafted, so their language and difficulty may differ from real ones. The drafter also repeats stories (a stolen passport in Lisbon appears in both sets); 4 near-duplicates of the first set were dropped from the second.
 - **Sample sizes.** Intervals on the headline rates are 10 to 30 points wide.
 - **Corpus.** A snapshot from October 2026, 129 pages. Answers can be out of date, and the pages are the Government of Canada's.
-- **Not built.** No per-person login (one shared API key since decision 31, with no rate limit and no spend cap), no personal-information handling (tickets are stored and sent to the model as typed) and no re-triage endpoint. The Docker image and Compose service exist but have not been run on the deploy host. (A person's override is recorded since decision 30; nothing has used it on real tickets yet.)
+- **Not built.** No per-person login (one shared API key since decision 31, with no rate limit and no spend cap), no personal-information handling (tickets are stored and sent to the model as typed) and no re-triage endpoint. The Docker image is built and checked in CI, and a Compose service is written, but the API is not deployed anywhere, by choice: the project is not meant to run day to day. (A person's override is recorded since decision 30; nothing has used it on real tickets yet.)
 - **Both triage test splits are spent.** Further prompt or policy changes need a new set.
 
 ## What I would do next
@@ -123,7 +123,7 @@ The policy was chosen on dev, from 72 combinations on 19 errors, and not touched
 2. Test on real tickets, even a small number, to see how far the drafted ones are from them.
 3. Fix the passport-lost-abroad rule on a third set, with the test split held back until the prompt is frozen.
 4. Use the override endpoint (built, decision 30) on real flagged tickets, then measure how many a person changes.
-5. Run the API on the deploy host (decision 31), and add a daily spend cap before the key is shared with anyone.
+5. If it ever runs for other people: deploy the API (the steps are in decision 31), and add a rate limit and a daily spend cap before the key is shared with anyone.
 
 ## Reproduce
 

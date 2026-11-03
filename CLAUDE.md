@@ -53,7 +53,7 @@ uv run sda-eval-answers --export [RESULTS] [--reveal] | --import-labels SHEET [-
 uv run pre-commit run --all-files
 uv add <pkg> / uv add --dev <pkg>
 docker compose up -d qdrant      # on the deploy host
-docker compose up -d --build api # the API there (needs .env with the three keys; Docker is not installed on the dev Mac, CI builds the image)
+docker compose up -d --build api # the API as a container (needs .env with the three keys; never deployed, by choice; Docker is not installed on the dev Mac, CI builds the image)
 ```
 
 Python is pinned to 3.12 (`.python-version`). Always go through `uv run`; don't use the system python.
