@@ -1,0 +1,11 @@
+# Allowlist: nothing goes into the build context unless it is named here. That keeps .env, .git,
+# the corpus text, the caches and the eval data out of the image.
+*
+!pyproject.toml
+!uv.lock
+!README.md
+!LICENSE
+!src
+!prompts
+!data/manifest.jsonl
+**/__pycache__
