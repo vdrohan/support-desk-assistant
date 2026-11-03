@@ -1,8 +1,70 @@
 # support-desk-assistant
 
-A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy.
+A retrieval-augmented Q&A and ticket triage assistant for support desks, with an evaluation harness that measures its accuracy. It answers questions from 129 Government of Canada pages with citations (or says it cannot), sorts support tickets by queue and priority, flags the ones a person should check, and reports every accuracy number with its sample size.
 
-> **Status: Phases 0 to 3 done.** Crawl, chunk, embed, index, vector search and cited answers from the CLI (`sda ask`, with citation validation) work. Retrieval has an eval baseline, and the answer eval set v1 is in place. The answer scoring runner (`sda-eval-answers`, with per-program, abstention and citation breakdowns and judge calibration) has a baseline run scored with judge v2 and, after decision 26, abstention recall 7 of 7 and answerable pass 0.82 on eval set v2 (0.84 and 0.78 earlier on v1). The judge has been calibrated on 50 labels written by Claude, not a person (40/40 agreement, in-sample, only one absent fact), and a person has not reviewed those labels (skipped by choice). `POST /ask` serves the same pipeline over HTTP (`sda-api`). Ticket triage (`POST /tickets`: queue and priority) is scored on a reviewed set: on the test split, queue 0.90, priority 0.80, urgent recall 0.95 (19/20); most of the gold labels were agreed by model passes, not reviewed by a person (decision 28). Escalation (`needs_review`) is scored on a fresh set, triage set v2, labelled by Claude in the working session rather than by a person: on its test split the policy sends 40% of tickets to a person and catches 24 of the 30 classifier errors, with 1 of 29 truly urgent tickets unreached (decision 29). The write-up with all results, limits and costs is [docs/writeup.md](docs/writeup.md). See [Roadmap](#roadmap).
+> **Status: Phases 0 to 4 done.** The API key and Docker image (Phase 4) are built and checked in CI; the API is not deployed anywhere, by choice. Phases and what was built: [Roadmap](#roadmap). Full results, limits and costs: [docs/writeup.md](docs/writeup.md).
+
+## Results at a glance
+
+| Part | Headline result | Read it with |
+|---|---|---|
+| Retrieval | The right page is in the top 5 for 0.91 of 34 questions | Small set; ambiguous and multi-program questions fail |
+| Answers | 42 of 51 answerable questions pass (0.82); 7 of 7 unanswerable ones abstain | The judge was calibrated on labels written by Claude |
+| Triage | Test splits, set v1 / set v2: queue 0.90 / 0.88, priority 0.80 / 0.81, urgent recall 19/20 and 28/29 | Tickets are model-drafted; most gold labels were agreed by models, not people |
+| Escalation | Flags 40% of tickets and catches 24 of the 30 classifier errors; 1 of 29 truly urgent tickets unreached | Four targets fixed beforehand, all met, one of them by a single ticket |
+
+Most sets have 50 to 100 items, so the 95% intervals in the reports (`data/eval/results/`) are wide. A full answer-eval run costs about CA$0.05, and paid API calls use Haiku only.
+
+**Try it without any keys:** the tests are offline, so with [uv](https://docs.astral.sh/uv/) installed this runs the whole suite in seconds.
+
+```bash
+git clone https://github.com/vdrohan/support-desk-assistant.git && cd support-desk-assistant
+uv sync && uv run pytest             # over 600 tests, no network, no API keys
+```
+
+## What it looks like
+
+These come from the committed result files, not from a new run. The questions and tickets are from the eval sets.
+
+**A cited answer** (eval item `ev-001`, answer shortened here with `[...]`):
+
+```
+Q: My dad had a bad accident and needs someone at home looking after him for a while. I had
+   to stop working to do it. How soon should I apply for EI, and do I risk losing anything
+   if I wait?
+
+A: Apply for EI as soon as possible after you stop working or after your earnings are
+   reduced. If you wait too long, you may lose benefits. [...] Amounts and deadlines can
+   change, so check the official page for the current rules. The page was last modified
+   on 2026-06-02.
+
+Cited pages:
+   EI caregiving benefits – How to apply    canada.ca/en/services/benefits/ei/caregiving/apply.html
+   EI caregiving benefits – After you apply canada.ca/en/services/benefits/ei/caregiving/after-applying.html
+   EI sickness benefits: Apply              canada.ca/en/services/benefits/ei/ei-sickness/apply.html
+```
+
+**An abstention** (`ev-054`): the documents do not cover it, so it does not guess.
+
+```
+Q: What's the minimum wage in Ontario right now?
+abstained: true
+reason: I can only answer questions about Employment Insurance, CPP, OAS, SIN and passports,
+        and the documents provided do not include Ontario minimum wage information.
+```
+
+**A triaged ticket** (`tc-001`, a ticket drafted by Haiku for the eval; the classifier's answer matched the gold label):
+
+```
+Subject: Need EI document before job start
+Body:    I start a new job on Monday and my employer needs proof of my most recent EI claim.
+         Where can I get a copy of that document quickly? I only have a few days left.
+
+queue: ei    priority: urgent
+rationale: The ticket asks where to get a copy of an EI claim document that an employer
+           needs before a job starts on Monday, with only a few days left. This is a
+           time-bound deadline within 7 days, so it is urgent.
+```
 
 ## Problem
 
@@ -14,7 +76,7 @@ Support agents spend much of their time finding answers that already exist in do
 
 And to **measure** all of this with a versioned eval set, so accuracy claims are backed by numbers.
 
-## Architecture (planned)
+## Architecture
 
 ```
              ┌──────────────┐  embed (Voyage AI)  ┌───────────┐
@@ -26,7 +88,7 @@ And to **measure** all of this with a versioned eval set, so accuracy claims are
              │ FastAPI api  │
              │              │──▶ Claude: grounded answer with citations
              └──────┬───────┘
-                    │ Phase 2+
+                    │ tickets
                     ▼
              triage + escalation ──▶ SQLite (tickets)
 
@@ -39,11 +101,11 @@ And to **measure** all of this with a versioned eval set, so accuracy claims are
 | Vector DB | Qdrant (Docker, pinned) | Filtering, hybrid search, light to run |
 | Embeddings | Voyage AI | Retrieval quality; pairs with Claude |
 | Generation | Claude | Grounded answers, structured output, prompt caching |
-| Ticket store | SQLite (Phase 2) | No server to run at this scale |
+| Ticket store | SQLite | No server to run at this scale |
 
 All AI runs through cloud APIs; there are no local models. Reasoning and rejected alternatives: [docs/decisions.md](docs/decisions.md).
 
-**Deployment:** developed on macOS, pushed to GitHub. The deploy host, a small Ubuntu Server box reachable only over Tailscale, pulls the repo and runs it with Docker Compose. Every container port binds to `127.0.0.1`.
+**Deployment:** developed on macOS, pushed to GitHub. Qdrant runs with Docker Compose on a small Ubuntu Server box reachable only over Tailscale, and the code reaches it through an SSH tunnel. The API itself is not deployed: this is a learning and portfolio project that nobody needs running day to day (decision 31). Every container port binds to `127.0.0.1`.
 
 ## Roadmap
 
@@ -53,6 +115,7 @@ All AI runs through cloud APIs; there are no local models. Reasoning and rejecte
 | 1 | RAG core: corpus crawler ✅, chunk + embed + index (`sda-ingest`) ✅, vector search (`sda-search`) ✅, answers with citations (`sda ask`) ✅, eval sets in `data/eval/` ✅, retrieval eval (`sda-eval-retrieval`) ✅, answer scoring runner and judge calibration (`sda-eval-answers`) ✅ (baseline run 2 done with judge v2; judge calibrated only on Claude-written labels; a human review was skipped by choice), `/ask` endpoint (`sda-api`) ✅ | ✅ done |
 | 2 | Triage layer: ticket classification (queue + priority) ✅, SQLite storage and `/tickets` API ✅, triage eval pipeline (scenario-drafted tickets, silver and blind gold labels, dev/test split, baselines) and `sda-eval-triage` runner ✅, gold sample of 50: 10 labelled by the owner, 40 where three blind model passes (Sonnet, Sonnet, Opus) agreed, not reviewed by a person (decision 28); first scores (Haiku, test split, run once): queue 0.90, priority 0.80, urgent recall 0.95 (19/20); gold labels mostly model-agreed, and a human review of those 40 was skipped by choice, see decision 28 | ✅ done |
 | 3 | Escalation logic for low-confidence cases (a `needs_review` flag from rules, queue confidence and a Haiku second opinion; scored once on the v2 test split against targets fixed beforehand: all four met, 41/103 escalated, 24/30 errors caught, labels are one model's reading), plus the write-up with eval results ([docs/writeup.md](docs/writeup.md)) | ✅ done |
+| 4 | Leave localhost: an API key on `/ask` and `/tickets` that fails closed ✅, a Docker image and a Compose service for the API ✅ (CI builds the image and checks it); the API is not deployed, by choice, because the project is not meant to run day to day (decision 31) | ✅ done (not deployed) |
 
 A retrieval baseline is in [`data/eval/results/`](data/eval/results/). The answer eval baseline is there too: run 1 (answer cap, decisions #24) and run 2 (judge v2, decisions #25), which supersedes it. A reorder-only run (2a) and an independent audit of run 1 are in [docs/judge_audit_run1.md](docs/judge_audit_run1.md).
 
@@ -65,13 +128,15 @@ English Government of Canada pages from canada.ca for 5 citizen-service programs
 ```
 src/support_desk_assistant/
   config.py      # single source of config values (pydantic-settings)
-  api/           # FastAPI app
+  api/           # FastAPI app and the API-key check
   ingest/        # crawl, chunk, embed, index (sda-ingest)
   retrieve.py    # vector search (sda-search)
   triage/        # ticket triage: schema, pipeline, escalation rules, SQLite store
-  evals/         # eval harness (answers, retrieval, triage)
+  evals/         # eval harness (answers, retrieval, triage, escalation)
+prompts/         # the instructions given to Claude (answers, judge, triage, drafting)
 docs/            # decisions and the write-up
-compose.yaml     # Qdrant
+compose.yaml     # Qdrant and the API
+Dockerfile       # the API image (built in CI, never deployed)
 data/
   manifest.jsonl # committed corpus definition: url, title, program, dates, hash
   raw/           # cached HTML (gitignored)
@@ -162,12 +227,21 @@ A person can correct or confirm a triage with `POST /tickets/{id}/override` (`qu
 ### Run the API
 
 ```bash
-uv run sda-api                       # http://127.0.0.1:8000, needs Qdrant, VOYAGE_API_KEY and ANTHROPIC_API_KEY
-curl -s localhost:8000/ask -H 'content-type: application/json' \
+python -c 'import secrets; print(secrets.token_urlsafe(32))'   # make a key and put it in .env as SDA_API_KEY
+uv run sda-api                       # http://127.0.0.1:8000, needs Qdrant, VOYAGE_API_KEY, ANTHROPIC_API_KEY and SDA_API_KEY
+curl -s localhost:8000/ask -H 'X-API-Key: <your key>' -H 'content-type: application/json' \
   -d '{"question": "How many weeks of EI sickness benefits can I get?", "program": "ei"}'
 ```
 
-`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `POST /tickets` (`subject`, `body`) triages a ticket, stores it and returns its queue, priority and rationale; `GET /tickets/{id}` and `GET /tickets?queue=&priority=&needs_review=` read them back; a ticket also carries `queue_confidence`, `priority_confidence`, `needs_review` and `escalation_reasons`. `/ask` adds `escalate` and `escalate_reason` (set when there is no answer: the retrieval gate, an abstention, failed citation validation or a generation failure). `GET /health` is a liveness check. The API has no authentication and binds to `127.0.0.1` (`ApiSettings`); don't expose it without putting auth in front. Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only).
+`POST /ask` takes `question` (required), `program` (one of the five) and `k`, and returns `abstained`, `answer`, `abstain_reason`, numbered `citations` (title and URL), `status`, `model`, `cost_cad`, `latency_ms` and `cache_hit`. An answer whose citations fail validation is returned as an abstention with status `validation_failed`. `POST /tickets` (`subject`, `body`) triages a ticket, stores it and returns its queue, priority and rationale; `GET /tickets/{id}` and `GET /tickets?queue=&priority=&needs_review=` read them back; a ticket also carries `queue_confidence`, `priority_confidence`, `needs_review` and `escalation_reasons`. `/ask` adds `escalate` and `escalate_reason` (set when there is no answer: the retrieval gate, an abstention, failed citation validation or a generation failure). `GET /health` is a liveness check and needs no key. Every other route needs the key in an `X-API-Key` header and answers 401 without it. The API refuses to start without `SDA_API_KEY` (at least 24 characters); `SDA_API__ALLOW_NO_KEY=true` serves without one for local development, on a loopback host only. It binds to `127.0.0.1` (`ApiSettings`). Why: [decisions #27](docs/decisions.md#27-ask-endpoint-same-pipeline-as-the-cli-validated-answers-only-no-auth-loopback-only) and [#31](docs/decisions.md#31-leaving-localhost-one-shared-api-key-that-fails-closed-and-a-docker-image-for-the-api).
+
+To run the API as a container on a server, it is a Compose service next to Qdrant:
+
+```bash
+docker compose up -d --build api     # needs .env there with ANTHROPIC_API_KEY, VOYAGE_API_KEY and SDA_API_KEY
+```
+
+The image holds the code, the prompts and the corpus manifest and nothing else; keys come from `.env` when it starts. Port 8000 is published on the host's loopback only, so reach it through the SSH tunnel, as with Qdrant. Tickets live in the `api_db` volume: back that one up. CI builds the image on every pull request and checks that it refuses to start without a key. The Compose service itself has never been started anywhere: the API is not deployed (decision 31).
 
 ## Disclaimer
 

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from functools import lru_cache
 
 import anthropic
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
 from support_desk_assistant.answer.pipeline import make_anthropic_client
@@ -91,6 +91,7 @@ def _out(ticket: Ticket) -> TicketOut:
 def add_ticket_routes(
     app: FastAPI,
     settings: Settings,
+    guard: Callable[..., None],
     triage_fn: TriageFn | None = None,
     store: TicketStore | None = None,
     second_fn: TriageFn | None = None,
@@ -100,13 +101,14 @@ def add_ticket_routes(
     # (tests) runs no second pass unless a ``second_fn`` is injected too.
     second = second_fn or (make_second_opinion_fn(settings) if triage_fn is None else None)
     cfg = settings.triage
+    protected = [Depends(guard)]
 
     @lru_cache(maxsize=1)
     def tickets() -> TicketStore:
         return store or TicketStore(settings.tickets_db_path)
 
     # Plain ``def`` handlers: FastAPI runs them in worker threads (blocking Claude and SQLite).
-    @app.post("/tickets", response_model=TicketOut, status_code=201)
+    @app.post("/tickets", response_model=TicketOut, status_code=201, dependencies=protected)
     def create_ticket(body: TicketIn) -> TicketOut:
         subject, text = body.subject.strip(), body.body.strip()
         if not text:
@@ -151,14 +153,14 @@ def add_ticket_routes(
         )
         return _out(ticket)
 
-    @app.get("/tickets/{ticket_id}", response_model=TicketOut)
+    @app.get("/tickets/{ticket_id}", response_model=TicketOut, dependencies=protected)
     def get_ticket(ticket_id: int) -> TicketOut:
         ticket = tickets().get(ticket_id)
         if ticket is None:
             raise HTTPException(404, "ticket not found")
         return _out(ticket)
 
-    @app.get("/tickets", response_model=list[TicketOut])
+    @app.get("/tickets", response_model=list[TicketOut], dependencies=protected)
     def list_tickets(
         queue: Queue | None = None,
         priority: Priority | None = None,
@@ -179,7 +181,7 @@ def add_ticket_routes(
         )
         return [_out(t) for t in found]
 
-    @app.post("/tickets/{ticket_id}/override", response_model=TicketOut)
+    @app.post("/tickets/{ticket_id}/override", response_model=TicketOut, dependencies=protected)
     def override_ticket(ticket_id: int, body: OverrideIn) -> TicketOut:
         ticket = tickets().get(ticket_id)
         if ticket is None:

@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from qdrant_client.http.exceptions import ResponseHandlingException
 
+from fakes import API_KEY
 from support_desk_assistant.answer.pipeline import Outcome, SystemPromptNotReady
 from support_desk_assistant.answer.schema import AnswerResult
 from support_desk_assistant.answer.validate import ValidationResult
@@ -70,9 +71,8 @@ class Recorder:
 
 def client_for(result, **settings_kw) -> tuple[TestClient, Recorder]:
     rec = Recorder(result)
-    return TestClient(
-        create_app(Settings(**settings_kw), ask_fn=rec), raise_server_exceptions=False
-    ), rec
+    app = create_app(Settings(sda_api_key=API_KEY, **settings_kw), ask_fn=rec)
+    return TestClient(app, raise_server_exceptions=False, headers={"X-API-Key": API_KEY}), rec
 
 
 def test_health():

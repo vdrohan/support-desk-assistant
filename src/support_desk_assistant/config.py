@@ -90,12 +90,19 @@ class RetrievalSettings(BaseModel):
 
 
 class ApiSettings(BaseModel):
-    """HTTP API (docs/decisions.md #27). Binds to loopback by default; there is no auth."""
+    """HTTP API (docs/decisions.md #27, #31). Binds to loopback by default. ``/ask`` and
+    ``/tickets`` need the key in ``Settings.api_key``; ``/health`` is open."""
 
     host: str = "127.0.0.1"
     port: int = 8000
     max_question_chars: int = 1000
     max_k: int = 20
+    key_header: str = "X-API-Key"
+    # A shorter key is refused at startup: a guessable key is no key.
+    min_key_chars: int = 24
+    # Local development only: serve with no key. Refused unless ``host`` is in ``loopback_hosts``.
+    allow_no_key: bool = False
+    loopback_hosts: tuple[str, ...] = ("127.0.0.1", "localhost", "::1")
 
 
 class TriageSettings(BaseModel):
@@ -397,6 +404,10 @@ class Settings(BaseSettings):
     )
     anthropic_api_key: SecretStr | None = Field(
         default=None, validation_alias=AliasChoices("ANTHROPIC_API_KEY", "anthropic_api_key")
+    )
+    # The key clients of /ask and /tickets send in ``ApiSettings.key_header`` (decisions.md #31).
+    api_key: SecretStr | None = Field(
+        default=None, validation_alias=AliasChoices("SDA_API_KEY", "sda_api_key")
     )
     logs_dir: Path = Path("logs")
     qdrant_url: str = Field(
