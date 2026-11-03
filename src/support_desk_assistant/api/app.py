@@ -8,7 +8,7 @@ from collections.abc import Callable
 from functools import lru_cache
 
 import anthropic
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from qdrant_client import QdrantClient
 from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
@@ -22,6 +22,7 @@ from support_desk_assistant.answer.pipeline import (
     execute,
     prepare,
 )
+from support_desk_assistant.api.auth import make_guard
 from support_desk_assistant.api.tickets import TriageFn, add_ticket_routes
 from support_desk_assistant.config import Settings, get_settings
 from support_desk_assistant.ingest.embed import Embedder, make_voyage_client
@@ -142,6 +143,7 @@ def create_app(
     second_fn: TriageFn | None = None,
 ) -> FastAPI:
     settings = settings or get_settings()
+    guard = make_guard(settings)  # refuses to start without a key (decisions.md #31)
     ask = ask_fn or make_ask_fn(settings)
     app = FastAPI(title="support-desk-assistant", version="0.1.0")
 
@@ -151,7 +153,7 @@ def create_app(
 
     # A plain ``def``: FastAPI runs it in a worker thread, so the blocking Voyage, Qdrant and
     # Anthropic calls do not stall the event loop.
-    @app.post("/ask", response_model=AskResponse)
+    @app.post("/ask", response_model=AskResponse, dependencies=[Depends(guard)])
     def ask_endpoint(body: AskRequest) -> AskResponse:
         api = settings.api
         if len(body.question) > api.max_question_chars:
@@ -169,5 +171,5 @@ def create_app(
         except (anthropic.APIError, VoyageError) as exc:
             raise HTTPException(502, "upstream model service error") from exc
 
-    add_ticket_routes(app, settings, triage_fn=triage_fn, store=store, second_fn=second_fn)
+    add_ticket_routes(app, settings, guard, triage_fn=triage_fn, store=store, second_fn=second_fn)
     return app
