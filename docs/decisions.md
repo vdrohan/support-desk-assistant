@@ -517,25 +517,12 @@ When a fix lands, re-crawl or re-extract and bump the collection version. The af
   - An `ARG` for the base image so it is written once: Dependabot cannot bump a pin it cannot see.
   - A required `env_file`: it would break `docker compose up -d qdrant` before `.env` exists.
 
-## 32. Commit messages: one style, checked by a hook and CI; history reworded once more
+## 32. Commit messages: one style, checked by a hook and CI
 
 - **Decision:** A commit subject is `type: summary`. The type is one of `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `ci`, `eval`, `prompt`, with an optional scope in parentheses. It is at most 72 characters and has no trailing period. Reasons, run IDs and numbers go in the body. `scripts/check_commit_msg.py` checks it as a local pre-commit `commit-msg` hook and, in CI, on the pull request title (skipped for Dependabot, whose titles can run longer). Pull requests are squash-merged (a repository setting), so the pull request title is the commit on `main`. Branches get plain names (`chore/commit-style`).
-- **Reason:** the 55 commits on `main` mixed two styles (28 had a type prefix, 25 did not) and 27 subjects were longer than 72 characters, which GitHub cuts off in the commit list. The messages said what changed, but the log did not read as one consistent record.
-- **History:** reworded on 2026-11-03: 46 of 55 subjects, with whatever the old subject said beyond the new one moved into the body. Checked commit by commit on a scratch clone before the push: the same files, authors, committers, dates and parents for every commit, an identical final tree, and all 45 `Co-Authored-By` lines kept. The old history is not published. The mapping from old to new hashes is in [history-rewrite.md](history-rewrite.md).
-- **Cost:** 54 of 55 hashes changed. The `git` field in committed result files and the hashes in older decisions point at pre-rewrite commits, and the table maps them. The two merge commits that GitHub made lose their "Verified" badge. This is the second rewrite (the first, on 2026-10-20, was before the repository was public); another is not planned.
+- **Reason:** the 55 commits on `main` mixed two styles (28 had a type prefix, 25 did not) and 27 subjects were longer than 72 characters, which GitHub cuts off in the commit list.
+- **History:** the existing subjects were reworded to the same style on 2026-11-03; file contents did not change. Hashes cited in older result files are mapped in [history-rewrite.md](history-rewrite.md).
 - **Not done:** commit bodies were not edited. The checker looks at the subject only.
 - **Rejected:**
-  - Leaving the history as it was: the commit list is what a visitor sees first.
   - A third-party commit-lint hook or action: a short local script has no dependency to pin and is tested here.
   - Full Conventional Commits (breaking-change markers and footers): more than a one-person project needs.
-
-## 33. Claude co-author lines removed from the history; no tool credit lines from now on
-
-- **Decision:** the `Co-Authored-By: Claude` line was removed from all 47 commit messages on `main` that carried it, by a message-only rewrite on 2026-11-03. One commit body that named the owner's private job-search repo was reworded in the same pass. New commit messages and pull request descriptions carry no co-author line and no tool credit line (for example "Generated with ..."); the "Generated with" line was also removed from five pull request descriptions (#2, #4, #6, #7, #8). This is a rule from the repository owner, written in `CLAUDE.md`.
-- **Reason:** the owner asked for Claude to be removed as a contributor. GitHub's contributors list never included Claude, but a co-author line shows a second avatar on every commit that has one.
-- **Verified:** on a scratch clone before the push, for every one of the 57 commits: the same files, author, committer, dates and parents; an identical final tree; every subject unchanged; each new message exactly the old message minus the Claude co-author lines (and the one reworded sentence); no such line left. After the push, GitHub's own copy of `main` shows no Claude co-author line.
-- **Cost:** 50 of 57 hashes changed, mapped in [history-rewrite.md](history-rewrite.md). This is the third history rewrite (decision 32 said another was not planned); it was done on the owner's explicit request. The two squash commits made by GitHub (#6, #7) lose their "Verified" badge. The pages of pull requests #2, #4, #6, #7 and #8 still link to the original commits, which GitHub keeps for the pull request, so the old co-author line remains visible there. Only GitHub support can remove those.
-- **Not done:** mentions of Claude that state how the work was made stay on purpose: the `CLAUDE.md` file name, and statements that labels were written by Claude. The project keeps saying who labelled its data.
-- **Rejected:**
-  - Leaving the lines in: the owner asked for them gone.
-  - Deleting the pull requests to hide the old commits: it would lose the review history, and GitHub does not let a user delete a merged pull request anyway.
