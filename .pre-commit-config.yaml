@@ -1,5 +1,8 @@
-# Install once: uv run pre-commit install
+# Install once: uv run pre-commit install (installs the pre-commit and the commit-msg hook)
 # Keep the ruff rev in sync with the ruff pin in pyproject.toml.
+default_install_hook_types: [pre-commit, commit-msg]
+# Without this, the file hooks below would also run at the commit-msg stage, on the message.
+default_stages: [pre-commit]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -23,3 +26,13 @@ repos:
     rev: v8.30.1
     hooks:
       - id: gitleaks
+
+  # Commit subject style (CLAUDE.md "Commits", docs/decisions.md #32). A local script: no extra
+  # dependency to pin.
+  - repo: local
+    hooks:
+      - id: commit-message-style
+        name: commit message style
+        entry: uv run python scripts/check_commit_msg.py
+        language: system
+        stages: [commit-msg]
