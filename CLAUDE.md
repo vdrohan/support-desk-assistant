@@ -28,6 +28,8 @@ Background: [README.md](README.md). Why things are the way they are: [docs/decis
 - `data/manifest.jsonl`: committed corpus definition. Gitignored: `data/raw/`, `data/processed/`, `data/chunks.jsonl`, `data/cache/` (embedding cache)
 - `data/eval/`: versioned eval datasets (`retrieval_v1.jsonl`, `eval_set_v1.jsonl` = accepted answer eval set, `judge_calibration.jsonl` = human labels for the judge) and `results/` (committed). Gitignored: `candidates.jsonl`, `review_state.json`, `review.html`, `judge_review.md`, `runs/`
 - `compose.yaml`: Qdrant and the API (`api` service, built from `Dockerfile`; `.dockerignore` is an allowlist)
+- `scripts/`: dev tooling. `check_commit_msg.py` checks a commit subject (pre-commit `commit-msg` hook; CI runs it on the pull request title)
+- `CHANGELOG.md`: what changed, by phase, in plain words
 
 ## Commands
 
@@ -64,6 +66,7 @@ Python is pinned to 3.12 (`.python-version`). Always go through `uv run`; don't 
 - **Docker:** every published port binds to `127.0.0.1` (`"127.0.0.1:PORT:PORT"`). Never use a bare `"PORT:PORT"`. Pin image versions (the API image's base is pinned by tag and digest in both `FROM` lines; keep them identical).
 - **Config:** chunk size, top_k, model names, collection names and similar values live only in `src/support_desk_assistant/config.py`. Never hardcode them elsewhere.
 - **Before committing:** run `uv run ruff check .` and `uv run pytest`; both must pass.
+- **Commits:** the subject is `type: summary`, with type one of `feat`, `fix`, `docs`, `test`, `refactor`, `perf`, `chore`, `ci`, `eval`, `prompt` (optional scope in parentheses), at most 72 characters, no trailing period. Reasons, run IDs and numbers go in the body. Pull requests are squash-merged, so the PR title becomes the commit subject and follows the same rule (CI checks it). Name branches in plain words (`feat/api-key`), not tool-generated ids. `scripts/check_commit_msg.py` enforces the subject as a `commit-msg` hook (`uv run pre-commit install` sets it up). Don't rewrite published history again without asking (decision 32).
 - **Dependencies:** add them with `uv add`, and commit `uv.lock`. Keep ruff's version in `pyproject.toml` the same as its rev in `.pre-commit-config.yaml`.
 - **Evals:** any retrieval change (chunking, embeddings, collection) gets a before/after `sda-eval-retrieval` run on the same dataset version. Don't edit a dataset that has published results; fix only genuine labelling errors (explain in `notes`) or create `retrieval_v2`.
 - **Index versions:** changing the embedding model, dimension, dtype or chunking means bumping `IndexSettings.collection` (`canada_docs_v2`, ...). Never pass `--allow-mass-delete` without understanding why the guard tripped.

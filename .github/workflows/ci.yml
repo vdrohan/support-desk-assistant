@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -20,6 +21,17 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pytest
+
+  # Pull requests are squash-merged, so the title becomes the commit subject (decisions.md #32).
+  # Dependabot titles can be longer than the limit, so its pull requests are skipped.
+  pr-title:
+    if: github.event_name == 'pull_request' && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: python3 scripts/check_commit_msg.py --subject "$PR_TITLE"
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
 
   # Builds the API image and checks the parts that only exist inside it (decisions.md #31).
   docker:

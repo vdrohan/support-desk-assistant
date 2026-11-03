@@ -135,6 +135,8 @@ src/support_desk_assistant/
   evals/         # eval harness (answers, retrieval, triage, escalation)
 prompts/         # the instructions given to Claude (answers, judge, triage, drafting)
 docs/            # decisions and the write-up
+CHANGELOG.md     # what changed, by phase
+scripts/         # dev tooling (the commit message check)
 compose.yaml     # Qdrant and the API
 Dockerfile       # the API image (built in CI, never deployed)
 data/
@@ -153,7 +155,7 @@ Prerequisites: [uv](https://docs.astral.sh/uv/) and, to run Qdrant, Docker.
 git clone https://github.com/vdrohan/support-desk-assistant.git
 cd support-desk-assistant
 uv sync                              # Python 3.12, dev tools, editable package
-uv run pre-commit install            # ruff and gitleaks on every commit
+uv run pre-commit install            # ruff, gitleaks and the commit message check on every commit
 cp .env.example .env                 # then add your ANTHROPIC_API_KEY and VOYAGE_API_KEY
 docker compose up -d qdrant          # Qdrant on 127.0.0.1:6333
 ```
